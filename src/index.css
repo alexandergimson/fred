@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 976px;
+
+  --color-primary: #1f50af;
+  --color-primaryvariant: #1d3461;
+  --color-activetab: #648fe3;
+  --color-secondary: #9dc0bc;
+  --color-background: #ebf2ff;
+  --color-textinactive: #958da5;
+  --color-buttonhover: #ebf2ff;
+  --color-ctabuttonhover: #9dc0bc;
+  --color-danger: #b0002d;
+
+  /* Scrollbar colours (tokens you can reuse in utilities) */
+  --color-scrollbar-track: transparent;
+  --color-scrollbar-thumb: #cbd5e1; /* slate-300 */
+  --color-scrollbar-thumb-hover: #94a3b8; /* slate-400 */
+}
+
+/* Add scrollbar utilities */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-scrollbar-thumb-hover);
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+}
+
+@layer components {
+  .UserPrimaryCta {
+    @apply inline-flex items-center justify-center gap-2 w-40 h-10 rounded-lg text-base
+           bg-primary text-white cursor-pointer
+           /* border setup (transparent by default to avoid layout shift) */
+           border border-transparent
+           /* subtle depth */
+           shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
+           /* slight slide-in from the left on hover */
+           -translate-x-[2px] hover:translate-x-0 transform-gpu
+           /* transitions */
+           transition-[transform,background-color,color,border-color,box-shadow] duration-500 ease-out
+           /* focus ring */
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+           /* disabled */
+           disabled:opacity-50 disabled:pointer-events-none
+           /* hover styles */
+           hover:bg-background hover:text-primary hover:border-primary hover:translate-y-[-2px];
+  }
+
+  .UserSecondaryCta {
+    @apply inline-flex items-center justify-center gap-2 w-20 h-10 rounded-lg text-base
+           bg-secondary text-white cursor-pointer
+           /* border setup (transparent by default to avoid layout shift) */
+           border border-transparent
+           /* subtle depth */
+           shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
+           /* slight slide-in from the left on hover */
+           -translate-x-[2px] hover:translate-x-0 transform-gpu
+           /* transitions */
+           transition-[transform,background-color,color,border-color,box-shadow] duration-500 ease-out
+           /* focus ring */
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+           /* disabled */
+           disabled:opacity-50 disabled:pointer-events-none
+           /* hover styles */
+           hover:bg-background hover:text-primary hover:border-secondary hover:translate-y-[-2px];
+  }
+
+  .UserIconBtn {
+    @apply inline-flex items-center justify-center h-10 w-10 rounded-full shrink-0
+           bg-background text-gray-700 cursor-pointer
+           ring-1 ring-black/5
+           shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
+           transform-gpu
+           transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
+           disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px];
+  }
+
+  .UserIconBtnDanger {
+    @apply inline-flex items-center justify-center h-10 w-10 rounded-full shrink-0
+           bg-background text-gray-700 cursor-pointer
+           ring-1 ring-black/5
+           shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
+           transform-gpu
+           transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
+           disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px] hover:bg-red-600;
+  }
+
+  /* Stack on UserIconBtn or UserPrimaryCta for destructive/confirm states */
+  .UserDanger {
+    @apply bg-danger text-white hover:shadow-lg focus-visible:ring-red-500/40;
+  }
+
+  .Card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+
+  .FormLabel {
+    @apply text-sm font-medium text-gray-700;
+  }
+  .Input {
+    @apply w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-base
+           outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition;
+  }
+  .Textarea {
+    @apply w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-base
+           outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition;
+  }
+  .Select {
+    @apply w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-base
+           outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition;
+  }
+  .Dropzone {
+    @apply flex items-center justify-center rounded-xl border-2 border-dashed
+           border-gray-300 bg-gray-50/60 hover:bg-gray-50 transition cursor-pointer;
+  }
+}
+
+/* Ensure icons inherit button colour */
+.UserIconBtn > svg,
+.UserPrimaryCta > svg {
+  stroke: currentColor;
+}
+
+@layer base {
+  html,
+  body,
+  #root,
+  #app {
+    font-family: "Figtree", sans-serif;
+  }
+  /* Form controls inherit it */
+  :where(button, input, select, textarea) {
+    font: inherit;
+  }
+}
