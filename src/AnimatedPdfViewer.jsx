@@ -1,4 +1,3 @@
-// AnimatedPdfViewer.jsx
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,7 +14,7 @@ export default function AnimatedPdfViewer({ url }) {
   const [containerWidth, setContainerWidth] = useState(0);
   const wrapRef = useRef(null);
 
-  // Resize observer to make the page fit nicely
+  // Resise observer to make the page fit nicely
   useEffect(() => {
     if (!wrapRef.current) return;
     const obs = new ResizeObserver(([entry]) => {

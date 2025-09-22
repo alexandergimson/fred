@@ -1,5 +1,5 @@
 // CreateContentScreen.jsx
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
 import { db, storage, auth } from "./lib/firebase";
@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
+/** Reused Field label wrapper (same as EditContentScreen) */
 function Field({ label, children }) {
   return (
     <label className="block">
@@ -21,15 +22,148 @@ function Field({ label, children }) {
   );
 }
 
+/** Helpers (subset aligned with EditContentScreen for consistent UI copy) */
+function isImageFile(file) {
+  return (file?.type || "").startsWith("image/");
+}
+function isPdfFile(file) {
+  return (
+    (file?.type || "") === "application/pdf" || /\.pdf$/i.test(file?.name || "")
+  );
+}
+
+/** Inline file dropzone (copied/adapted to mirror EditContentScreen UX) */
+function InlineFileDropzone({
+  selectedFile, // File | null
+  onPick, // (file: File) => void
+  accept = "application/pdf,image/*",
+  maxBytes = 16 * 1024 * 1024,
+  triggerRef, // ref to expose a .click() trigger
+}) {
+  const inputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!triggerRef) return;
+    triggerRef.current = () => inputRef.current?.click();
+  }, [triggerRef]);
+
+  function validate(file) {
+    if (!file) return false;
+    const okType = isPdfFile(file) || isImageFile(file);
+    if (!okType) {
+      alert("Please pick a PDF or image file.");
+      return false;
+    }
+    if (file.size > maxBytes) {
+      alert(`File too large. Max ${(maxBytes / (1024 * 1024)).toFixed(0)} MB.`);
+      return false;
+    }
+    return true;
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!validate(file)) return;
+    onPick?.(file);
+  }
+
+  const inner = (() => {
+    if (selectedFile) {
+      const img = isImageFile(selectedFile);
+      return (
+        <div className="flex items-center gap-3 px-4">
+          {img ? (
+            <img
+              src={URL.createObjectURL(selectedFile)}
+              alt="Preview"
+              className="h-16 w-16 object-contain rounded border border-gray-200 bg-white"
+            />
+          ) : (
+            <div className="h-16 w-16 grid place-items-center rounded border border-gray-200 bg-white text-gray-500">
+              PDF
+            </div>
+          )}
+          <div className="text-sm">
+            <div className="font-medium text-gray-800 truncate max-w-[220px]">
+              {selectedFile.name}
+            </div>
+            <div className="text-gray-500">
+              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="text-sm text-gray-600 text-center px-4">
+        <div className="font-medium text-gray-700">Upload a PDF or image</div>
+        <div className="text-gray-500">
+          Click to choose or drag & drop (Max 16MB)
+        </div>
+      </div>
+    );
+  })();
+
+  return (
+    <div className="w-full">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) =>
+          (e.key === "Enter" || e.key === " ") && inputRef.current?.click()
+        }
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          handleFile(f);
+        }}
+        className={[
+          "flex h-40 w-full items-center justify-center rounded-lg border-2 border-dashed transition-colors",
+          dragOver
+            ? "border-[#1F50AF] bg-[#1F50AF]/5"
+            : "border-gray-300 bg-gray-50",
+          "cursor-pointer",
+        ].join(" ")}
+        title="Click to upload or drag & drop"
+      >
+        {inner}
+      </div>
+    </div>
+  );
+}
+
 export default function CreateContentScreen() {
   const { hubId } = useParams();
   const navigate = useNavigate();
+
+  // Mirror EditContentScreen shape for consistency
   const [form, setForm] = useState({
     name: "",
-    kind: "file", // default to PDF flow
+    kind: "embed", // "embed" | "file" (default to embed to match edit UI ordering)
     embedUrl: "",
-    file: null,
+    newFile: null, // File chosen for upload when kind === "file"
   });
+
+  const openPickerRef = useRef(null);
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   async function save() {
@@ -39,64 +173,66 @@ export default function CreateContentScreen() {
         return;
       }
 
-      if (!form.name.trim()) {
+      const name = (form.name || "").trim();
+      if (!name) {
         alert("Please enter a name");
         return;
       }
-      if (form.kind === "embed" && !form.embedUrl.trim()) {
-        alert("Please enter an embed URL");
-        return;
-      }
-      if (form.kind === "file" && !form.file) {
-        alert("Please choose a file");
-        return;
-      }
-      if (
-        form.kind === "file" &&
-        form.file &&
-        !(/\.pdf$/i.test(form.file.name) || /pdf/i.test(form.file.type || ""))
-      ) {
-        alert("Please upload a PDF file (.pdf)");
-        return;
-      }
 
-      // 1) Create a doc FIRST to reserve a stable id for the storage path
+      // Prepare base doc first to reserve an ID for storage path
       const colRef = collection(db, "hubs", hubId, "content");
-      const docRef = doc(colRef); // generates id without writing yet
+      const docRef = doc(colRef);
       const contentId = docRef.id;
 
       const base = {
-        name: form.name.trim(),
-        kind: form.kind, // "file" | "embed"
-        embedUrl: form.kind === "embed" ? form.embedUrl.trim() : null,
+        name,
+        kind: form.kind,
+        embedUrl: form.kind === "embed" ? (form.embedUrl || "").trim() : null,
         fileUrl: null,
         position: Date.now(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      await setDoc(docRef, base);
-
-      // 2) If it's an embed, we’re done
+      // Validation per type
       if (form.kind === "embed") {
+        if (!base.embedUrl) {
+          alert("Please enter an embed URL");
+          return;
+        }
+        await setDoc(docRef, base);
         navigate(`/admin/hubs/${hubId}/content`);
         return;
       }
 
-      // 3) Upload the PDF under the docId folder
-      const filename = form.file.name;
-      const path = `hubs/${hubId}/content/${contentId}/${filename}`;
-      const fileRef = ref(storage, path);
-      const metadata = { contentType: form.file.type || "application/pdf" };
+      // kind === "file"
+      const f = form.newFile;
+      if (!f) {
+        alert("Please choose a file to upload");
+        return;
+      }
+      if (!(isPdfFile(f) || isImageFile(f))) {
+        alert("Please upload a PDF or image file.");
+        return;
+      }
 
-      const task = uploadBytesResumable(fileRef, form.file, metadata);
+      // Create doc first (so content exists even while uploading)
+      await setDoc(docRef, base);
+
+      // Upload to a stable path using the reserved contentId
+      const path = `hubs/${hubId}/content/${contentId}/${f.name}`;
+      const fileRef = ref(storage, path);
+      const metadata = {
+        contentType: f.type || (isPdfFile(f) ? "application/pdf" : undefined),
+      };
+
+      const task = uploadBytesResumable(fileRef, f, metadata);
       await new Promise((resolve, reject) => {
         task.on("state_changed", null, reject, resolve);
       });
 
       const fileUrl = await getDownloadURL(fileRef);
 
-      // 4) Update the same doc with the fileUrl
       await updateDoc(docRef, {
         fileUrl,
         updatedAt: serverTimestamp(),
@@ -134,8 +270,8 @@ export default function CreateContentScreen() {
                   value={form.kind}
                   onChange={(e) => update({ kind: e.target.value })}
                 >
-                  <option value="file">File (PDF)</option>
-                  <option value="embed">Embed (YouTube, Vimeo…)</option>
+                  <option value="embed">Embed</option>
+                  <option value="file">File</option>
                 </select>
               </Field>
 
@@ -149,16 +285,35 @@ export default function CreateContentScreen() {
                   />
                 </Field>
               ) : (
-                <Field label="Upload PDF">
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={(e) =>
-                      update({ file: e.target.files?.[0] || null })
-                    }
-                    className="text-sm"
+                <>
+                  <InlineFileDropzone
+                    selectedFile={form.newFile}
+                    onPick={(file) => update({ newFile: file })}
+                    accept="application/pdf,image/*"
+                    maxBytes={16 * 1024 * 1024}
+                    triggerRef={openPickerRef}
                   />
-                </Field>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <button
+                      type="button"
+                      className="UserPrimaryCta w-auto px-4"
+                      onClick={() => openPickerRef.current?.()}
+                    >
+                      {form.newFile ? "Choose another…" : "Upload…"}
+                    </button>
+
+                    {form.newFile && (
+                      <button
+                        type="button"
+                        className="UserIconBtn w-auto px-3"
+                        onClick={() => update({ newFile: null })}
+                      >
+                        Clear selection
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>

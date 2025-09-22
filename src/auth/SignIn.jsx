@@ -44,7 +44,7 @@ export default function SignIn() {
         // clean up
         window.localStorage.removeItem("emailForSignIn");
 
-        // ✅ redirect after successful email link sign-in
+        // redirect after successful email link sign-in
         navigate("/admin/hubs", { replace: true });
       }
     } catch (err) {
@@ -56,14 +56,14 @@ export default function SignIn() {
     setError("");
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      // ✅ redirect after successful Google sign-in
+      // redirect after successful Google sign-in
       navigate("/admin/hubs", { replace: true });
     } catch (err) {
       setError(err.message || "Google sign-in failed");
     }
   }
 
-  // ✅ Auto-complete if landed from the email link (run once on mount)
+  // Auto-complete if landed from the email link (run once on mount)
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       void completeIfLink();

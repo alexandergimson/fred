@@ -1,4 +1,3 @@
-// CreateHubScreen.jsx
 import { useState } from "react";
 import HubScreenHeader from "./HubScreenHeader";
 import { useNavigate } from "react-router-dom";

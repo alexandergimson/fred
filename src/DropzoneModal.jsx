@@ -1,15 +1,17 @@
 // DropzoneModal.jsx
 import { useEffect, useRef, useState } from "react";
+import UploadIcon from "./icons/UploadIcon"; // adjust path as needed
 
 export default function DropzoneModal({
   open,
   onClose,
   onSelect, // (file) => void
-  accept = "*/*", // e.g. "image/*" or "application/pdf,image/*"
-  maxBytes = 8 * 1024 * 1024, // 8MB default
+  accept = "*/*",
+  maxBytes = 8 * 1024 * 1024, // 8MB
   title = "Upload a file",
   subtitle = "Click to browse or drag & drop",
   helper = "Max size 8MB",
+  Icon = UploadIcon, // <— new: allows swapping icon per usage
 }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -59,7 +61,7 @@ export default function DropzoneModal({
         className="relative z-[101] w-full max-w-lg rounded-2xl bg-white shadow-xl ring-1 ring-black/10"
       >
         <div className="p-5 border-b border-gray-100">
-          <h2 className="TextH2"> {title} </h2>
+          <h2 className="TextH2">{title}</h2>
           <p className="TextMuted mt-1">{subtitle}</p>
         </div>
 
@@ -78,7 +80,6 @@ export default function DropzoneModal({
               dragging ? "border-primary bg-background" : "border-gray-300",
             ].join(" ")}
           >
-            {/* Hidden input for browse */}
             <input
               ref={inputRef}
               type="file"
@@ -88,22 +89,7 @@ export default function DropzoneModal({
             />
 
             <div className="flex flex-col items-center justify-center px-6 text-center">
-              {/* Upload icon */}
-              <svg
-                className="w-10 h-10 mb-3 text-gray-500"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 20 16"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                />
-              </svg>
+              <Icon className="w-10 h-10 mb-3 text-gray-500" />
 
               <p className="TextBodySm">
                 <span

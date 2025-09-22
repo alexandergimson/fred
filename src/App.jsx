@@ -14,8 +14,7 @@ import SignIn from "./auth/SignIn";
 import HubContentScreen from "./HubContentScreen";
 import CreateContentScreen from "./CreateContentScreen";
 import EditContentScreen from "./EditContentScreen";
-// import HubAnalyticsScreen from "./HubAnalyticsScreen";
-import ProfileScreen from "./ProfileScreen"; // ⬅️ add this
+import ProfileScreen from "./ProfileScreen";
 
 function App() {
   return (
@@ -54,10 +53,8 @@ function App() {
               path="hubs/:hubId/content/:contentId/edit"
               element={<EditContentScreen />}
             />
-            {/* <Route path="hubs/:hubId/analytics" element={<HubAnalyticsScreen />} /> */}
           </Route>
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/admin/hubs" replace />} />
         </Routes>
       </AuthProvider>

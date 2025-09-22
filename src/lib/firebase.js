@@ -18,7 +18,7 @@ const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: AUTH_DOMAIN,
   projectId: PROJECT_ID,
-  storageBucket: STORAGE_BUCKET,        // ✅ use the REAL bucket from .env
+  storageBucket: STORAGE_BUCKET,        // use the REAL bucket from .env
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
