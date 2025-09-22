@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
+import SaveIcon from "./icons/SaveIcon";
 import { db, storage, auth } from "./lib/firebase";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import SaveIcon from "./icons/SaveIcon";
 
+/** Small UI */
 function Field({ label, children }) {
   return (
     <label className="block">
@@ -16,49 +17,33 @@ function Field({ label, children }) {
   );
 }
 
-// Pull the object path out of any download URL (old or new)
+/** URL helpers */
 function extractPathFromUrl(url) {
   try {
     const afterO = url.split("/o/")[1];
     if (!afterO) return null;
     const encoded = afterO.split("?")[0];
-    return decodeURIComponent(encoded); // e.g. hubs/<hubId>/content/<contentId>/file.pdf
+    return decodeURIComponent(encoded);
   } catch {
     return null;
   }
 }
-
-// Nice filename from a Firebase download URL or any URL
-function fileNameFromUrl(url = "") {
-  try {
-    const pathFromO = extractPathFromUrl(url);
-    const raw = pathFromO
-      ? pathFromO.split("/").pop()
-      : new URL(url).pathname.split("/").pop();
-    return decodeURIComponent(raw || "file");
-  } catch {
-    const parts = url.split("?")[0].split("/");
-    return decodeURIComponent(parts.pop() || "file");
-  }
-}
-
 function isImageUrl(url = "") {
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
 }
 
-/** Inline file dropzone (PDFs or images) */
+/** Inline dropzone that can show current file OR new selection */
 function InlineFileDropzone({
-  selectedFile, // File | null (new file selection)
-  currentUrl, // string | null (existing file URL)
-  onPick, // (file: File) => void
+  selectedFile,
+  currentUrl,
+  onPick,
   accept = "application/pdf,image/*",
   maxBytes = 16 * 1024 * 1024,
-  triggerRef, // ref to expose a .click() trigger
+  triggerRef,
 }) {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Expose a trigger for external buttons
   useEffect(() => {
     if (!triggerRef) return;
     triggerRef.current = () => inputRef.current?.click();
@@ -84,7 +69,20 @@ function InlineFileDropzone({
     onPick?.(file);
   }
 
-  // What to show in the drop area
+  // Nice filename from URL
+  function fileNameFromUrl(url = "") {
+    try {
+      const fromO = extractPathFromUrl(url);
+      const raw = fromO
+        ? fromO.split("/").pop()
+        : new URL(url).pathname.split("/").pop();
+      return decodeURIComponent(raw || "file");
+    } catch {
+      const parts = url.split("?")[0].split("/");
+      return decodeURIComponent(parts.pop() || "file");
+    }
+  }
+
   const inner = (() => {
     if (selectedFile) {
       const isImg = selectedFile.type?.startsWith("image/");
@@ -214,11 +212,11 @@ export default function EditContentScreen() {
     name: "",
     kind: "embed", // "embed" | "file"
     embedUrl: "",
-    fileUrl: null, // current file's download URL (if kind === "file")
+    fileUrl: null, // current file URL (if kind === "file")
     newFile: null, // File selected to replace
   });
 
-  const openPickerRef = useRef(null); // trigger for picker
+  const openPickerRef = useRef(null);
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   useEffect(() => {
@@ -253,11 +251,14 @@ export default function EditContentScreen() {
 
       let fileUrl = form.fileUrl ?? null;
 
+      // If replacing/adding a file, upload with caching + versioned filename
       if (form.kind === "file" && form.newFile) {
-        const path = `hubs/${hubId}/content/${contentId}/${form.newFile.name}`;
+        const versionedName = `${Date.now()}-${form.newFile.name}`;
+        const path = `hubs/${hubId}/content/${contentId}/${versionedName}`;
         const fileRef = ref(storage, path);
         const metadata = {
           contentType: form.newFile.type || "application/pdf",
+          cacheControl: "public,max-age=31536000,immutable",
         };
         const task = uploadBytesResumable(fileRef, form.newFile, metadata);
         await new Promise((res, rej) =>
@@ -266,13 +267,14 @@ export default function EditContentScreen() {
         fileUrl = await getDownloadURL(fileRef);
       }
 
+      // Normalize token-less firebasestorage.app links if present
       if (
         form.kind === "file" &&
         fileUrl &&
         fileUrl.includes("firebasestorage.app")
       ) {
-        const path = extractPathFromUrl(fileUrl);
-        if (path) fileUrl = await getDownloadURL(ref(storage, path));
+        const p = extractPathFromUrl(fileUrl);
+        if (p) fileUrl = await getDownloadURL(ref(storage, p));
       }
 
       if (form.kind === "embed") fileUrl = null;
@@ -338,7 +340,7 @@ export default function EditContentScreen() {
                 </Field>
               ) : (
                 <>
-                  {/* Inline dropzone now shows the filename if a current file exists */}
+                  {/* Inline dropzone shows current file (if any) or the new selection */}
                   <InlineFileDropzone
                     selectedFile={form.newFile}
                     currentUrl={form.fileUrl}
@@ -348,7 +350,6 @@ export default function EditContentScreen() {
                     triggerRef={openPickerRef}
                   />
 
-                  {/* Actions under the dropzone */}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     <button
                       type="button"

@@ -1,7 +1,7 @@
 // prospect_main.jsx
 import { useMemo } from "react";
 import ContentLayout from "./ContentLayout";
-import PdfViewer from "./PdfViewer";
+import PdfFlipBook from "./PdfFlipBook";
 
 export default function ProspectMain({ hubTitle, content, contactHref }) {
   const contentName = content?.name ?? "—";
@@ -18,21 +18,6 @@ export default function ProspectMain({ hubTitle, content, contactHref }) {
       /\.(png|jpe?g|gif|webp|avif|bmp|svg)($|\?)/i.test(fileUrl),
     [fileUrl]
   );
-
-  const renderEmbed = () =>
-    content?.embedUrl ? (
-      <div className="w-full h-full">
-        <iframe
-          src={content.embedUrl}
-          title={content.name || "Embed"}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
-    ) : (
-      <div className="p-6 text-gray-600">No embed URL.</div>
-    );
 
   const renderImage = () =>
     fileUrl ? (
@@ -67,16 +52,24 @@ export default function ProspectMain({ hubTitle, content, contactHref }) {
           </a>
         ) : null
       }
-      // no custom controls — we’re using the browser PDF viewer
+      /* ⬇️ no footer controls */
       controls={null}
     >
       {!content ? (
         <div className="p-6 text-gray-600">No content selected.</div>
-      ) : content.kind === "embed" ? (
-        renderEmbed()
       ) : isPdf ? (
         <div className="w-full h-full">
-          <PdfViewer url={fileUrl} />
+          {/* Full-height, two-up flipbook with *no* internal arrows */}
+          <PdfFlipBook
+            key={fileUrl}
+            url={fileUrl}
+            forceTwoUp
+            verticalPad={0} /* give it all available height */
+            showInternalArrows={false}
+            showCover={false} /* open as [1|2] */
+            gap={16} /* tweak spread gap if you like */
+            maxWidth={2000} /* optional: allow very wide spreads */
+          />
         </div>
       ) : isImage ? (
         renderImage()

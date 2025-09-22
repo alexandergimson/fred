@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
+import SaveIcon from "./icons/SaveIcon";
 import { db, storage, auth } from "./lib/firebase";
 import {
   collection,
@@ -12,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-/** Reused Field label wrapper (same as EditContentScreen) */
+/** Small UI */
 function Field({ label, children }) {
   return (
     <label className="block">
@@ -22,17 +23,16 @@ function Field({ label, children }) {
   );
 }
 
-/** Helpers (subset aligned with EditContentScreen for consistent UI copy) */
+/** Helpers */
 function isImageFile(file) {
   return (file?.type || "").startsWith("image/");
 }
 function isPdfFile(file) {
-  return (
-    (file?.type || "") === "application/pdf" || /\.pdf$/i.test(file?.name || "")
-  );
+  const t = file?.type || "";
+  return t === "application/pdf" || /\.pdf$/i.test(file?.name || "");
 }
 
-/** Inline file dropzone (copied/adapted to mirror EditContentScreen UX) */
+/** Inline dropzone (PDFs or images) */
 function InlineFileDropzone({
   selectedFile, // File | null
   onPick, // (file: File) => void
@@ -155,12 +155,11 @@ export default function CreateContentScreen() {
   const { hubId } = useParams();
   const navigate = useNavigate();
 
-  // Mirror EditContentScreen shape for consistency
   const [form, setForm] = useState({
     name: "",
-    kind: "embed", // "embed" | "file" (default to embed to match edit UI ordering)
+    kind: "embed", // "embed" | "file"
     embedUrl: "",
-    newFile: null, // File chosen for upload when kind === "file"
+    newFile: null, // File when kind === "file"
   });
 
   const openPickerRef = useRef(null);
@@ -179,7 +178,7 @@ export default function CreateContentScreen() {
         return;
       }
 
-      // Prepare base doc first to reserve an ID for storage path
+      // Reserve an ID first
       const colRef = collection(db, "hubs", hubId, "content");
       const docRef = doc(colRef);
       const contentId = docRef.id;
@@ -194,7 +193,6 @@ export default function CreateContentScreen() {
         updatedAt: serverTimestamp(),
       };
 
-      // Validation per type
       if (form.kind === "embed") {
         if (!base.embedUrl) {
           alert("Please enter an embed URL");
@@ -216,14 +214,18 @@ export default function CreateContentScreen() {
         return;
       }
 
-      // Create doc first (so content exists even while uploading)
+      // Create doc first (so item exists while uploading)
       await setDoc(docRef, base);
 
-      // Upload to a stable path using the reserved contentId
-      const path = `hubs/${hubId}/content/${contentId}/${f.name}`;
+      // Versioned filename + strong caching
+      const versionedName = `${Date.now()}-${f.name}`;
+      const path = `hubs/${hubId}/content/${contentId}/${versionedName}`;
       const fileRef = ref(storage, path);
       const metadata = {
-        contentType: f.type || (isPdfFile(f) ? "application/pdf" : undefined),
+        contentType:
+          f.type ||
+          (isPdfFile(f) ? "application/pdf" : "application/octet-stream"),
+        cacheControl: "public,max-age=31536000,immutable",
       };
 
       const task = uploadBytesResumable(fileRef, f, metadata);
@@ -251,7 +253,11 @@ export default function CreateContentScreen() {
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
             title="Add content"
-            action={{ label: "Save content", onClick: save }}
+            action={{
+              label: "Save content",
+              onClick: save,
+              icon: <SaveIcon className="w-5 h-5" />,
+            }}
           />
 
           <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">
