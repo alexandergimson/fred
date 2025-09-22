@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import DropzoneModal from "./DropzoneModal";
 import ThemePreview from "./ThemePreview";
+import SaveIcon from "./icons/SaveIcon";
 
 /* theme pieces */
 import ColorInput from "./theme/ColorInput";
@@ -157,7 +158,11 @@ export default function EditHubScreen() {
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
             title="Edit Hub"
-            action={{ label: "Save changes", onClick: save }}
+            action={{
+              label: "Save changes",
+              onClick: save,
+              icon: <SaveIcon className="w-5 h-5" />,
+            }}
           />
 
           <div className="flex-1 overflow-auto px-6 pb-4">
@@ -323,6 +328,7 @@ export default function EditHubScreen() {
                       <ThemePreview
                         theme={form.prospectTheme}
                         logoUrl={previewSrc}
+                        hubName={form.name}
                         anchorClass="relative w-full"
                         className="w-full aspect-[16/9]"
                       />

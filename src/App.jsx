@@ -40,9 +40,7 @@ function App() {
             {/* Global admin pages */}
             <Route path="hubs" element={<HubsScreen />} />
             <Route path="hubs/new" element={<CreateHubScreen />} />
-            <Route path="profile" element={<ProfileScreen />} />{" "}
-            {/* ⬅️ profile route */}
-            {/* Hub-scoped pages */}
+            <Route path="profile" element={<ProfileScreen />} />
             <Route path="hubs/:hubId/edit" element={<EditHubScreen />} />
             <Route path="hubs/:hubId/content" element={<HubContentScreen />} />
             <Route
@@ -54,7 +52,6 @@ function App() {
               element={<EditContentScreen />}
             />
           </Route>
-
           <Route path="*" element={<Navigate to="/admin/hubs" replace />} />
         </Routes>
       </AuthProvider>

@@ -5,6 +5,7 @@ import HubScreenHeader from "./HubScreenHeader";
 import { db, storage, auth } from "./lib/firebase";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import SaveIcon from "./icons/SaveIcon";
 
 function Field({ label, children }) {
   return (
@@ -299,7 +300,11 @@ export default function EditContentScreen() {
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
             title="Edit content"
-            action={{ label: "Save changes", onClick: save }}
+            action={{
+              label: "Save changes",
+              onClick: save,
+              icon: <SaveIcon className="w-5 h-5" />,
+            }}
           />
 
           <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">

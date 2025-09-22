@@ -14,7 +14,6 @@ const FALLBACK_THEME = {
   },
   sidebarText: "#374151",
   logoBg: "#FFFFFF",
-
   headerBgMode: "solid",
   headerBg: "#FFFFFF",
   headerGradient: {
@@ -25,10 +24,8 @@ const FALLBACK_THEME = {
     ],
   },
   headerText: "#111827",
-
   buttonBg: "#1F50AF",
   buttonText: "#FFFFFF",
-
   contentBgMode: "solid",
   contentBg: "#FFFFFF",
   contentGradient: {
@@ -55,6 +52,7 @@ const bgVal = (mode, solid, gradient) =>
 export default function ThemePreview({
   theme,
   logoUrl,
+  hubName, // NEW: pass the hub’s name from parent
   anchorClass = "relative",
   className = "w-full aspect-[16/9]",
   label,
@@ -64,6 +62,8 @@ export default function ThemePreview({
   const sidebarBg = bgVal(t.sidebarBgMode, t.sidebarBg, t.sidebarGradient);
   const headerBg = bgVal(t.headerBgMode, t.headerBg, t.headerGradient);
   const contentBg = bgVal(t.contentBgMode, t.contentBg, t.contentGradient);
+
+  const nameToShow = (hubName && hubName.trim()) || "Hub name"; // graceful fallback
 
   return (
     <div className={anchorClass}>
@@ -109,8 +109,8 @@ export default function ThemePreview({
               className="h-12 flex items-center justify-between px-4"
               style={{ background: headerBg, color: t.headerText }}
             >
-              <div className="font-medium text-[12px] tracking-wide">
-                HUB NAME
+              <div className="font-medium text-[12px] tracking-wide uppercase">
+                {nameToShow}
               </div>
               <div
                 className="h-7 px-3 rounded-md text-[12px] grid place-items-center"

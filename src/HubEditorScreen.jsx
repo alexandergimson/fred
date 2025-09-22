@@ -20,6 +20,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import ColorInput from "./theme/ColorInput";
 import BgField from "./theme/BgField";
 import { defaultProspectTheme, migrateTheme } from "./theme/defaults";
+import SaveIcon from "./icons/SaveIcon";
 
 /* small UI helpers */
 function Field({ label, required, children }) {
@@ -200,7 +201,12 @@ export default function HubEditorScreen() {
           <HubScreenHeader
             title={isEdit ? "Edit Hub" : "New Hub"}
             action={{
-              label: isEdit ? "Save changes" : "Save hub",
+              label: (
+                <span className="inline-flex items-center gap-2">
+                  <SaveIcon className="w-4 h-4" />
+                  <span>{isEdit ? "Save changes" : "Save hub"}</span>
+                </span>
+              ),
               onClick: save,
             }}
           />
