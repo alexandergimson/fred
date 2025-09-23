@@ -45,7 +45,7 @@ export default function SideBar({ logoUrl, items, activeId, onSelect }) {
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive)
-                    e.currentTarget.style.background = "rgba(0,0,0,0.06)";
+                    e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive)

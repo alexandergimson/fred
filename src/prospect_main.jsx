@@ -1,17 +1,18 @@
 // prospect_main.jsx
 import { useMemo } from "react";
-import ContentLayout from "./ContentLayout";
 import PdfFlipBook from "./PdfFlipBook";
 
-export default function ProspectMain({ hubTitle, content, contactHref }) {
-  const contentName = content?.name ?? "—";
+export default function ProspectMain({
+  hubTitle,
+  content,
+  contactHref,
+  onMeasure,
+}) {
   const fileUrl = content?.fileUrl || "";
-
   const isPdf = useMemo(
     () => typeof fileUrl === "string" && /\.pdf($|\?)/i.test(fileUrl),
     [fileUrl]
   );
-
   const isImage = useMemo(
     () =>
       typeof fileUrl === "string" &&
@@ -19,12 +20,25 @@ export default function ProspectMain({ hubTitle, content, contactHref }) {
     [fileUrl]
   );
 
+  const renderEmbed = () =>
+    content?.embedUrl ? (
+      <iframe
+        src={content.embedUrl}
+        title={content.name || "Embed"}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    ) : (
+      <div className="p-6 text-gray-600">No embed URL.</div>
+    );
+
   const renderImage = () =>
     fileUrl ? (
       <div className="w-full h-full flex items-center justify-center">
         <img
           src={fileUrl}
-          alt={content.name || "Image"}
+          alt={content?.name || "Image"}
           className="max-h-full max-w-full object-contain"
         />
       </div>
@@ -33,44 +47,23 @@ export default function ProspectMain({ hubTitle, content, contactHref }) {
     );
 
   return (
-    <ContentLayout
-      hubTitle={hubTitle}
-      contentName={contentName}
-      rightSlot={
-        contactHref ? (
-          <a
-            href={contactHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-40 h-10 inline-flex items-center justify-center rounded-lg text-base no-underline cursor-pointer transition-opacity hover:opacity-90"
-            style={{
-              backgroundColor: "var(--pv-btn-bg)",
-              color: "var(--pv-btn-text)",
-            }}
-          >
-            Contact Us
-          </a>
-        ) : null
-      }
-      /* ⬇️ no footer controls */
-      controls={null}
-    >
+    <div className="w-full h-full">
       {!content ? (
         <div className="p-6 text-gray-600">No content selected.</div>
+      ) : content.kind === "embed" ? (
+        renderEmbed()
       ) : isPdf ? (
-        <div className="w-full h-full">
-          {/* Full-height, two-up flipbook with *no* internal arrows */}
-          <PdfFlipBook
-            key={fileUrl}
-            url={fileUrl}
-            forceTwoUp
-            verticalPad={0} /* give it all available height */
-            showInternalArrows={false}
-            showCover={false} /* open as [1|2] */
-            gap={16} /* tweak spread gap if you like */
-            maxWidth={2000} /* optional: allow very wide spreads */
-          />
-        </div>
+        <PdfFlipBook
+          key={fileUrl}
+          url={fileUrl}
+          forceTwoUp
+          verticalPad={0} // ← use full center height
+          showInternalArrows={false}
+          showCover={false} // open as [1|2]
+          gap={0}
+          maxWidth={2200} // allow wider spreads if the screen allows
+          onMeasure={onMeasure}
+        />
       ) : isImage ? (
         renderImage()
       ) : fileUrl ? (
@@ -87,6 +80,6 @@ export default function ProspectMain({ hubTitle, content, contactHref }) {
       ) : (
         <div className="p-6 text-gray-600">Nothing to show.</div>
       )}
-    </ContentLayout>
+    </div>
   );
 }

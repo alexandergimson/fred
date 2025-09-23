@@ -29,6 +29,7 @@ export const defaultProspectTheme = {
   // Buttons
   buttonBg: "#1F50AF",
   buttonText: "#FFFFFF",
+  buttonHoverColor: "#1F50AF",
 
   // Content
   contentBgMode: "solid",

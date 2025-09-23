@@ -239,7 +239,7 @@ export default function EditHubScreen() {
 
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <BgField
-                        label="Sidebar background"
+                        label="Background"
                         mode={form.prospectTheme.sidebarBgMode}
                         setMode={(v) =>
                           update("prospectTheme.sidebarBgMode", v)
@@ -260,35 +260,6 @@ export default function EditHubScreen() {
                           }
                         />
                       </Field>
-                      <Field label="Logo background (sidebar)">
-                        <ColorInput
-                          withModal
-                          value={form.prospectTheme.logoBg}
-                          onChange={(v) => update("prospectTheme.logoBg", v)}
-                        />
-                      </Field>
-
-                      <BgField
-                        label="Header background"
-                        mode={form.prospectTheme.headerBgMode}
-                        setMode={(v) => update("prospectTheme.headerBgMode", v)}
-                        solid={form.prospectTheme.headerBg}
-                        setSolid={(v) => update("prospectTheme.headerBg", v)}
-                        gradient={form.prospectTheme.headerGradient}
-                        setGradient={(g) =>
-                          update("prospectTheme.headerGradient", g)
-                        }
-                      />
-                      <Field label="Header text">
-                        <ColorInput
-                          withModal
-                          value={form.prospectTheme.headerText}
-                          onChange={(v) =>
-                            update("prospectTheme.headerText", v)
-                          }
-                        />
-                      </Field>
-
                       <Field label="Button background">
                         <ColorInput
                           withModal
@@ -305,20 +276,15 @@ export default function EditHubScreen() {
                           }
                         />
                       </Field>
-
-                      <BgField
-                        label="Content background"
-                        mode={form.prospectTheme.contentBgMode}
-                        setMode={(v) =>
-                          update("prospectTheme.contentBgMode", v)
-                        }
-                        solid={form.prospectTheme.contentBg}
-                        setSolid={(v) => update("prospectTheme.contentBg", v)}
-                        gradient={form.prospectTheme.contentGradient}
-                        setGradient={(g) =>
-                          update("prospectTheme.contentGradient", g)
-                        }
-                      />
+                      <Field label="Button hover background">
+                        <ColorInput
+                          withModal
+                          value={form.prospectTheme.buttonHoverColor}
+                          onChange={(v) =>
+                            update("prospectTheme.buttonHoverColor", v)
+                          }
+                        />
+                      </Field>
                     </div>
                   </div>
 

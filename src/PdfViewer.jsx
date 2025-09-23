@@ -236,10 +236,7 @@ export default function PdfViewer({
   if (!url) return null;
 
   return (
-    <div
-      ref={outerRef}
-      className="w-full h-full bg-white relative overflow-hidden p-4"
-    >
+    <div ref={outerRef} className="w-full h-full relative overflow-hidden p-4">
       {error ? (
         <div className="p-4 text-sm text-red-600">{error}</div>
       ) : !pdf || !dims ? (

@@ -37,7 +37,7 @@ function createRenderQueue(maxConcurrent = 1) {
 }
 
 const BookPage = React.forwardRef(({ children }, ref) => (
-  <div ref={ref} className="relative overflow-hidden bg-gray-100 rounded-md">
+  <div ref={ref} className="relative overflow-hidden bg-transparent">
     {children}
   </div>
 ));
@@ -119,6 +119,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     showCover = false, // default to spread [1|2]
     showInternalArrows = false,
     onFlip,
+    onMeasure,
   },
   ref
 ) {
@@ -284,6 +285,18 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
 
   const totalPages = numPages;
 
+  // Report size to parent (only when we actually have dims & pages)
+  React.useEffect(() => {
+    if (dims && totalPages) {
+      onMeasure?.({
+        pageWidth: dims.pageWidth,
+        pageHeight: dims.pageHeight,
+        bookWidth: dims.bookWidth,
+        bookHeight: dims.bookHeight,
+      });
+    }
+  }, [dims, totalPages, onMeasure]);
+
   // IMPORTANT: key ONLY by file + page count + layout flags (NOT size)
   const flipKey = useMemo(() => {
     if (!url || !totalPages) return "pending";
@@ -295,10 +308,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   if (!url) return null;
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full relative overflow-hidden bg-white"
-    >
+    <div ref={containerRef} className="w-full h-full relative overflow-hidden">
       {error ? (
         <div className="p-4 text-sm text-red-600">{error}</div>
       ) : !ready || !pdf || !dims || !totalPages ? (

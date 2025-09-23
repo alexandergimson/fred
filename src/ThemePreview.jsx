@@ -14,6 +14,7 @@ const FALLBACK_THEME = {
   },
   sidebarText: "#374151",
   logoBg: "#FFFFFF",
+
   headerBgMode: "solid",
   headerBg: "#FFFFFF",
   headerGradient: {
@@ -24,8 +25,11 @@ const FALLBACK_THEME = {
     ],
   },
   headerText: "#111827",
+
   buttonBg: "#1F50AF",
   buttonText: "#FFFFFF",
+  buttonHoverColor: "#1F50AF", // <- used for content item hover
+
   contentBgMode: "solid",
   contentBg: "#FFFFFF",
   contentGradient: {
@@ -49,10 +53,23 @@ const cssGradient = (g) => {
 const bgVal = (mode, solid, gradient) =>
   mode === "gradient" ? cssGradient(gradient) || solid : solid;
 
+// simple contrast helper (black/white)
+function getContrastColor(hex) {
+  if (!hex || typeof hex !== "string") return "#fff";
+  const c = hex.replace("#", "");
+  if (c.length !== 6) return "#fff";
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#000" : "#fff";
+}
+
 export default function ThemePreview({
   theme,
-  logoUrl,
-  hubName, // NEW: pass the hub’s name from parent
+  logoUrl, // shows at top of right list in this preview
+  hubName,
+  contentName,
   anchorClass = "relative",
   className = "w-full aspect-[16/9]",
   label,
@@ -60,84 +77,125 @@ export default function ThemePreview({
   const t = { ...FALLBACK_THEME, ...(theme || {}) };
 
   const sidebarBg = bgVal(t.sidebarBgMode, t.sidebarBg, t.sidebarGradient);
-  const headerBg = bgVal(t.headerBgMode, t.headerBg, t.headerGradient);
   const contentBg = bgVal(t.contentBgMode, t.contentBg, t.contentGradient);
 
-  const nameToShow = (hubName && hubName.trim()) || "Hub name"; // graceful fallback
+  const nameHub = (hubName && hubName.trim()) || "Hub name";
+  const nameContent = (contentName && contentName.trim()) || "Content name";
+
+  // Hover styling for content items
+  const itemHoverBg = t.buttonHoverColor || t.buttonBg;
+  const itemHoverText = getContrastColor(itemHoverBg);
 
   return (
     <div className={anchorClass}>
       {label && <div className="mb-2 text-[11px] text-gray-500">{label}</div>}
 
+      {/* Inline styles to preview hover without external CSS */}
+      <style>{`
+        .tp-item {
+          transition: background-color .15s ease, color .15s ease;
+          cursor: pointer;
+        }
+        .tp-item:hover {
+          background: ${itemHoverBg} !important;
+          color: ${itemHoverText} !important;
+        }
+      `}</style>
+
       <div
         className={`shadow-lg border border-gray-200 overflow-hidden bg-white ${className}`}
       >
+        {/* Three-pane preview: RIGHT list / CENTER viewer / LEFT meta */}
         <div className="flex h-full">
-          {/* Sidebar */}
+          {/* RIGHT: simple list to suggest content panel */}
           <aside
-            className="w-[110px] flex flex-col"
-            style={{ background: sidebarBg, color: t.sidebarText }}
+            className="w-[110px] bg-white border-l border-gray-200"
+            style={{ background: sidebarBg }}
           >
             <div
-              className="h-12 mb-3 flex items-center justify-center overflow-hidden"
-              style={{ backgroundColor: t.logoBg }}
+              className="h-12 shrink-0 flex items-center justify-center overflow-hidden"
+              style={{ background: t.logoBg }}
             >
               {logoUrl ? (
-                <img src={logoUrl} alt="" className="h-4 object-contain" />
+                <img src={logoUrl} alt="" className="h-5 object-contain" />
               ) : (
                 <div className="text-[10px] opacity-70">Logo</div>
               )}
             </div>
-            <div className="space-y-1 text-[11px] leading-5 px-4">
+            <div className="p-3 space-y-2 text-[11px] text-gray-700">
               <div
-                className="rounded-md px-2 py-1"
-                style={{ backgroundColor: "rgba(0,0,0,0.06)" }}
+                className="h-6 px-2 text-[10px] grid place-items-center rounded"
+                style={{ background: t.buttonBg, color: t.buttonText }}
               >
-                Content 1
+                Item A
               </div>
-              <div className="px-2 py-1">Content 2</div>
-              <div className="px-2 py-1">Content 3</div>
+              <div
+                className="h-6 px-2 text-[10px] grid place-items-center rounded"
+                style={{ background: t.buttonHoverColor }}
+              >
+                Item B
+              </div>
+              <div className="h-6 px-2 text-[10px] grid place-items-center rounded">
+                Item C
+              </div>
             </div>
           </aside>
 
-          {/* Main */}
+          {/* CENTER: viewer area — full height, two-up, no gap, aspect kept */}
           <div
-            className="flex-1 flex flex-col"
+            className="flex-1 min-w-0 flex items-stretch justify-center overflow-hidden"
             style={{ background: contentBg }}
           >
-            <header
-              className="h-12 flex items-center justify-between px-4"
-              style={{ background: headerBg, color: t.headerText }}
-            >
-              <div className="font-medium text-[12px] tracking-wide uppercase">
-                {nameToShow}
-              </div>
-              <div
-                className="h-7 px-3 rounded-md text-[12px] grid place-items-center"
-                style={{ backgroundColor: t.buttonBg, color: t.buttonText }}
-              >
-                Contact Us
-              </div>
-            </header>
-
-            <div className="flex-1 grid place-items-center">
-              <div className="w-4/5 h-3/4 border border-gray-300 rounded-lg grid place-items-center text-[11px] text-gray-500 bg-white/70">
-                Content 1
-              </div>
-            </div>
-
-            {/* half-height centered control bar */}
-            <div className="h-4.5 flex items-center justify-center">
-              <div
-                className="h-[18px] px-2 rounded-md flex items-center gap-2"
-                style={{ backgroundColor: t.buttonBg, color: t.buttonText }}
-              >
-                <div className="w-4 h-4 rounded-sm bg-white/20" />
-                <div className="text-[10px]">1–2 / 14</div>
-                <div className="w-4 h-4 rounded-sm bg-white/20" />
+            <div className="h-full max-w-full flex items-center justify-center">
+              <div className="h-full flex gap-0">
+                <div
+                  className="h-full bg-white border border-gray-300 aspect-[0.707]"
+                  style={{ aspectRatio: "0.707" }}
+                />
+                <div
+                  className="h-full bg-white border border-gray-300 aspect-[0.707]"
+                  style={{ aspectRatio: "0.707" }}
+                />
               </div>
             </div>
           </div>
+
+          {/* LEFT: meta sidebar (CTA + meta) */}
+          <aside
+            className="w-[120px] flex flex-col"
+            style={{ background: sidebarBg, color: t.sidebarText }}
+          >
+            {/* Contact CTA */}
+            <div
+              className="p-2 shrink-0 flex items-center justify-center"
+              style={{ background: t.logoBg }}
+            >
+              <div
+                className="h-6 px-2 text-[10px] grid place-items-center rounded"
+                style={{ background: t.buttonBg, color: t.buttonText }}
+              >
+                Contact Us
+              </div>
+            </div>
+
+            {/* Meta */}
+            <div className="px-3 py-3 space-y-3 text-[11px] leading-5">
+              <div>
+                <div className="uppercase tracking-wide opacity-60 text-[10px]">
+                  Hub
+                </div>
+                <div className="font-medium">{nameHub}</div>
+              </div>
+              <div>
+                <div className="uppercase tracking-wide opacity-60 text-[10px]">
+                  Content
+                </div>
+                <div>{nameContent}</div>
+              </div>
+            </div>
+
+            <div className="flex-1" />
+          </aside>
         </div>
       </div>
     </div>
