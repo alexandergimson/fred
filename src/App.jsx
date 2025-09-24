@@ -2,7 +2,6 @@
 import "./App.css";
 import "./index.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
 import ProspectLayout from "./ProspectLayout";
 import HubScreenLayout from "./HubScreenLayout";
 import HubsScreen from "./HubsScreen";
@@ -14,7 +13,8 @@ import SignIn from "./auth/SignIn";
 import HubContentScreen from "./HubContentScreen";
 import CreateContentScreen from "./CreateContentScreen";
 import EditContentScreen from "./EditContentScreen";
-import ProfileScreen from "./ProfileScreen";
+import ProfileScreen from "./UserProfileScreen";
+import HubDesign from "./HubDesign";
 
 function App() {
   return (
@@ -42,6 +42,7 @@ function App() {
             <Route path="hubs/new" element={<CreateHubScreen />} />
             <Route path="profile" element={<ProfileScreen />} />
             <Route path="hubs/:hubId/edit" element={<EditHubScreen />} />
+            <Route path="hubs/:hubId/design" element={<HubDesign />} />
             <Route path="hubs/:hubId/content" element={<HubContentScreen />} />
             <Route
               path="hubs/:hubId/content/new"

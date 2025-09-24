@@ -45,7 +45,6 @@ function ActionButton({ children, title, onClick, confirm, label, danger }) {
 export default function HubContentScreen() {
   const { hubId } = useParams();
   const navigate = useNavigate();
-  const [hubName, setHubName] = useState("Content");
 
   const [docs, setDocs] = useState([]); // raw docs from Firestore
   const [rows, setRows] = useState([]); // UI rows (mutated during drag)
@@ -55,6 +54,7 @@ export default function HubContentScreen() {
 
   const [dragId, setDragId] = useState(null);
 
+  const [hubName, setHubName] = useState("Content");
   // Fetch hub name
   useEffect(() => {
     (async () => {
@@ -181,7 +181,7 @@ export default function HubContentScreen() {
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
-            title={hubName}
+            title={`${hubName} | Content`}
             action={{
               label: "Add content",
               to: `/admin/hubs/${hubId}/content/new`,

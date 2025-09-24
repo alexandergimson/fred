@@ -7,6 +7,7 @@ import HubsIcon from "./icons/HubsIcon";
 import AnalyticsIcon from "./icons/AnalyticsIcon";
 import HubOverviewIcon from "./icons/HubOverviewIcon";
 import HubContentIcon from "./icons/HubContentIcon";
+import HubDesignIcon from "./icons/HubDesignIcon";
 
 // logic to handle what items to show
 function getItems(hubId) {
@@ -23,15 +24,22 @@ function getItems(hubId) {
       to: `/admin/hubs/${hubId}/analytics`,
       icon: AnalyticsIcon,
     },
+    // --- INSERTED SEPARATOR MARKER ---
+    { type: "separator", key: "hub-section" },
     {
       label: "Hub Content",
       to: `/admin/hubs/${hubId}/content`,
       icon: HubContentIcon,
     },
     {
-      label: "Hub Overview",
+      label: "Hub Details",
       to: `/admin/hubs/${hubId}/edit`,
       icon: HubOverviewIcon,
+    },
+    {
+      label: "Hub Design",
+      to: `/admin/hubs/${hubId}/design`,
+      icon: HubDesignIcon,
     },
   ];
 }
@@ -90,11 +98,31 @@ const AdminSidebar = () => {
       {/* Nav */}
       <nav className="flex-1 min-h-0 overflow-y-auto mt-8 scrollbar-thin">
         <ul className="flex flex-col items-center">
-          {items.map(({ to, icon, label, exact }) => (
-            <li key={to}>
-              <SidebarItem to={to} icon={icon} label={label} exact={exact} />
-            </li>
-          ))}
+          {items.map((item) => {
+            if (item.type === "separator") {
+              return (
+                <li
+                  key={item.key || "separator"}
+                  aria-hidden="true"
+                  className="my-8"
+                >
+                  <div
+                    className="flex items-center justify-center shrink-0"
+                    role="separator"
+                    aria-hidden="true"
+                  >
+                    <hr className="w-40 h-0.5 border-t-0 bg-gray-100" />
+                  </div>
+                </li>
+              );
+            }
+            const { to, icon, label, exact } = item;
+            return (
+              <li key={to}>
+                <SidebarItem to={to} icon={icon} label={label} exact={exact} />
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

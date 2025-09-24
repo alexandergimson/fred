@@ -3,10 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "./lib/firebase";
 import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
-
-import ProspectMetaSidebar from "./ProspectMetaSidebar";
-import SideBar from "./prospect_sidebar"; // right list
-import Main from "./prospect_main"; // center PDF/Image/Embed
+import ProspectMetaSidebar from "./ProspectSidebarRight";
+import SideBar from "./ProspectSidebarLeft"; // right list
+import Main from "./ProspectContentViewer"; // center PDF/Image/Embed
 
 // contrast util
 function getContrastColor(hex) {
@@ -36,6 +35,7 @@ export default function ProspectLayout() {
   const [activeId, setActiveId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookSize, setBookSize] = useState(null);
+
   // hub
   useEffect(() => {
     (async () => {
@@ -115,7 +115,11 @@ export default function ProspectLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={cssVars}>
+    // Paint the gradient once here
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ ...cssVars, background: "var(--pv-sidebar-bg)" }}
+    >
       {/* RIGHT: your existing list (logo area & items) */}
       <SideBar
         logoUrl={hub?.logoUrl}
@@ -123,11 +127,12 @@ export default function ProspectLayout() {
         activeId={activeId}
         onSelect={setActiveId}
       />
+
       {/* CENTER: viewer — fills all remaining height/width */}
       <div
         className="flex-1 min-w-0"
         style={{
-          background: "var(--pv-sidebar-bg)",
+          background: "transparent", // don't restart gradient
           width: bookSize?.bookWidth ? `${bookSize.bookWidth}px` : "auto",
         }}
       >
@@ -140,6 +145,7 @@ export default function ProspectLayout() {
           />
         </div>
       </div>
+
       {/* LEFT: meta sidebar (CTA + names) */}
       <ProspectMetaSidebar
         hubTitle={hub?.name || "Hub"}

@@ -1,6 +1,5 @@
 // prospect_main.jsx
 import { useMemo } from "react";
-
 import PdfFlipBook from "./PdfFlipBook";
 
 // Converts a share URL (YouTube, Vimeo, Loom, Google Drive) into an embeddable iframe src
@@ -10,7 +9,7 @@ function toEmbed(url, title = "Embed") {
     const u = new URL(url.startsWith("http") ? url : `https://${url}`);
     const host = u.hostname.replace(/^www\./, "").toLowerCase();
 
-    // YouTube variants: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID
+    // YouTube variants…
     if (
       host === "youtube.com" ||
       host === "youtube-nocookie.com" ||
@@ -25,7 +24,6 @@ function toEmbed(url, title = "Embed") {
         id = u.searchParams.get("v") || "";
       }
       if (!id) return null;
-      // start time support (?t= or &start=)
       const t = u.searchParams.get("t") || u.searchParams.get("start");
       const start = t && /^\d+$/.test(t) ? `?start=${t}` : "";
       const src = `https://www.youtube-nocookie.com/embed/${id}${start}`;
@@ -39,12 +37,11 @@ function toEmbed(url, title = "Embed") {
       };
     }
 
-    // Vimeo: vimeo.com/ID -> player.vimeo.com/video/ID
+    // Vimeo
     if (host === "vimeo.com" || host === "player.vimeo.com") {
       let id = "";
       const parts = u.pathname.split("/").filter(Boolean);
       if (host === "player.vimeo.com") {
-        // /video/ID
         id = parts[1] || "";
       } else {
         id = parts[0] || "";
@@ -59,7 +56,7 @@ function toEmbed(url, title = "Embed") {
       };
     }
 
-    // Loom: loom.com/share/ID -> loom.com/embed/ID
+    // Loom
     if (host.endsWith("loom.com")) {
       const parts = u.pathname.split("/").filter(Boolean);
       const id = parts[1] || ""; // share/ID
@@ -73,7 +70,7 @@ function toEmbed(url, title = "Embed") {
       };
     }
 
-    // Google Drive: https://drive.google.com/file/d/ID/view -> /preview
+    // Google Drive
     if (host === "drive.google.com") {
       const match = u.pathname.match(/\/file\/d\/([^/]+)/);
       const id = match?.[1];
@@ -87,19 +84,14 @@ function toEmbed(url, title = "Embed") {
       };
     }
 
-    // Fallback: return the URL as-is (may fail with X-Frame-Options)
+    // Fallback
     return { src: u.toString(), title, allowFullScreen: true };
   } catch (e) {
     return null;
   }
 }
 
-export default function ProspectMain({
-  hubTitle,
-  content,
-  contactHref,
-  onMeasure,
-}) {
+export default function ProspectMain({ content, onMeasure }) {
   const fileUrl = content?.fileUrl || "";
   const isPdf = useMemo(
     () => typeof fileUrl === "string" && /\.pdf($|\?)/i.test(fileUrl),
@@ -154,7 +146,7 @@ export default function ProspectMain({
     );
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ background: "transparent" }}>
       {!content ? (
         <div className="p-6 text-gray-600">No content selected.</div>
       ) : content.kind === "embed" ? (
@@ -164,11 +156,11 @@ export default function ProspectMain({
           key={fileUrl}
           url={fileUrl}
           forceTwoUp
-          verticalPad={0} // ← use full center height
+          verticalPad={0}
           showInternalArrows={false}
-          showCover={false} // open as [1|2]
+          showCover={false}
           gap={0}
-          maxWidth={2200} // allow wider spreads if the screen allows
+          maxWidth={2200}
           onMeasure={onMeasure}
         />
       ) : isImage ? (

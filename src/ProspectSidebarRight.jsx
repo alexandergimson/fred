@@ -8,14 +8,14 @@ export default function ProspectMetaSidebar({
     <aside
       className="h-screen w-64 flex flex-col overflow-hidden"
       style={{
-        background: "var(--pv-sidebar-bg)",
+        background: "transparent", // don't repaint
         color: "var(--pv-sidebar-text)",
       }}
     >
       {/* Top: CTA */}
       <div
         className="p-4 shrink-0 flex items-center justify-center"
-        style={{ background: "var(--pv-logo-bg)" }}
+        style={{ background: "transparent" }} // continuous gradient
       >
         {contactHref ? (
           <a

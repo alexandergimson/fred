@@ -6,7 +6,7 @@ export default function SideBar({ logoUrl, items, activeId, onSelect }) {
     <aside
       className="h-screen w-60 flex flex-col overflow-hidden"
       style={{
-        background: "var(--pv-sidebar-bg)",
+        background: "transparent", // don't repaint
         color: "var(--pv-sidebar-text)",
       }}
     >
@@ -15,7 +15,7 @@ export default function SideBar({ logoUrl, items, activeId, onSelect }) {
         className="shrink-0 flex items-center justify-center"
         style={{
           height: "var(--pv-header-height)",
-          background: "var(--pv-logo-bg)",
+          background: "transparent", // continuous gradient behind logo
         }}
       >
         {logoUrl ? (

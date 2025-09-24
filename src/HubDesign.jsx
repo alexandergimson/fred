@@ -99,17 +99,6 @@ export default function EditHubScreen() {
     })();
   }, [hubId, navigate]);
 
-  const [hubName, setHubName] = useState("Content");
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, "hubs", hubId));
-        if (snap.exists()) setHubName(snap.data().name || "Content");
-      } catch {}
-    })();
-  }, [hubId]);
-
   /* save */
   const save = async () => {
     try {
@@ -154,6 +143,17 @@ export default function EditHubScreen() {
     }
   };
 
+  const [hubName, setHubName] = useState("Content");
+  // Fetch hub name
+  useEffect(() => {
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "hubs", hubId));
+        if (snap.exists()) setHubName(snap.data().name || "Content");
+      } catch {}
+    })();
+  }, [hubId]);
+
   const previewSrc =
     form.logo && typeof form.logo === "object"
       ? form.logo.url
@@ -168,7 +168,7 @@ export default function EditHubScreen() {
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
-            title={`${hubName} | details`}
+            title={`${hubName} | design`}
             action={{
               label: "Save changes",
               onClick: save,
@@ -178,65 +178,80 @@ export default function EditHubScreen() {
 
           <div className="flex-1 overflow-auto px-6 pb-4">
             <div className="space-y-10 max-w-screen-2xl mx-auto">
-              {/* Top row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div className="lg:col-span-1 grid grid-cols-1 gap-4">
-                  <Field label="Hub Name" required>
-                    <TextInput
-                      value={form.name}
-                      onChange={(e) => update("name", e.target.value)}
-                      placeholder="e.g. Coca-Cola"
-                    />
-                  </Field>
-                  <Field label="Contact Us link">
-                    <TextInput
-                      type="url"
-                      value={form.contactLink || ""}
-                      onChange={(e) => update("contactLink", e.target.value)}
-                      placeholder="https://example.com/contact"
-                    />
-                  </Field>
-                </div>
-
-                <div className="lg:col-span-1">
-                  <div className="mb-2 text-sm text-gray-600">Logo</div>
-                  <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white overflow-hidden">
-                    {previewSrc ? (
-                      <img
-                        src={previewSrc}
-                        alt="Logo preview"
-                        className="h-24 max-w-full object-contain"
+              {/* Prospect Theme + Preview */}
+              <section>
+                <div className="space-y-6">
+                  {/* Inputs in a 3x2 grid */}
+                  <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                      <BgField
+                        label="Sidebar background"
+                        mode={form.prospectTheme.sidebarBgMode}
+                        setMode={(v) =>
+                          update("prospectTheme.sidebarBgMode", v)
+                        }
+                        solid={form.prospectTheme.sidebarBg}
+                        setSolid={(v) => update("prospectTheme.sidebarBg", v)}
+                        gradient={form.prospectTheme.sidebarGradient}
+                        setGradient={(g) =>
+                          update("prospectTheme.sidebarGradient", g)
+                        }
                       />
-                    ) : (
-                      <div className="text-sm text-gray-500 text-center px-3">
-                        <div className="mb-1 font-medium text-gray-700">
-                          Upload an image
-                        </div>
-                        <div>PNG, JPG, SVG, or WebP</div>
-                      </div>
-                    )}
+
+                      <Field label="Sidebar text">
+                        <ColorInput
+                          withModal
+                          value={form.prospectTheme.sidebarText}
+                          onChange={(v) =>
+                            update("prospectTheme.sidebarText", v)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Button background">
+                        <ColorInput
+                          withModal
+                          value={form.prospectTheme.buttonBg}
+                          onChange={(v) => update("prospectTheme.buttonBg", v)}
+                        />
+                      </Field>
+
+                      <Field label="Button text">
+                        <ColorInput
+                          withModal
+                          value={form.prospectTheme.buttonText}
+                          onChange={(v) =>
+                            update("prospectTheme.buttonText", v)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Button hover background">
+                        <ColorInput
+                          withModal
+                          value={form.prospectTheme.buttonHoverColor}
+                          onChange={(v) =>
+                            update("prospectTheme.buttonHoverColor", v)
+                          }
+                        />
+                      </Field>
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="UserPrimaryCta w-35 px-4"
-                      onClick={() => setLogoModalOpen(true)}
-                    >
-                      {previewSrc ? "Replace logo" : "Upload logo"}
-                    </button>
-                    {previewSrc && (
-                      <button
-                        type="button"
-                        className="UserSecondaryCta w-35 px-3"
-                        onClick={() => update("logo", null)}
-                        title="Remove current logo"
-                      >
-                        Remove
-                      </button>
-                    )}
+
+                  {/* Theme preview below inputs */}
+                  <div>
+                    <div className="mt-4">
+                      <ThemePreview
+                        theme={form.prospectTheme}
+                        logoUrl={previewSrc}
+                        hubName={form.name}
+                        anchorClass="relative w-full"
+                        className="w-full aspect-[16/9]"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </section>
             </div>
           </div>
         </div>

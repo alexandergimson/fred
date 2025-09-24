@@ -16,4 +16,5 @@ To run, use npm run dev
 To push to GitHub
 git add .
 git commit -m "Message"
-git push origina -u origin main
+git push origina -u main
+(though usually best to use a branch!!!)

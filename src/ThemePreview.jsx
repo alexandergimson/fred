@@ -87,8 +87,9 @@ export default function ThemePreview({
   const itemHoverText = getContrastColor(itemHoverBg);
 
   return (
-    <div className={anchorClass}>
-      {label && <div className="mb-2 text-[11px] text-gray-500">{label}</div>}
+    // Paint the gradient ONCE here so everything inside shares one continuous background
+    <div className={anchorClass} style={{ background: sidebarBg }}>
+      {label && <div className="mb-2 text-[11px] text-gray-700">{label}</div>}
 
       {/* Inline styles to preview hover without external CSS */}
       <style>{`
@@ -103,18 +104,21 @@ export default function ThemePreview({
       `}</style>
 
       <div
-        className={`shadow-lg border border-gray-200 overflow-hidden bg-white ${className}`}
+        className={`shadow-lg border border-gray-200 overflow-hidden ${className}`}
+        // No background here—keep it transparent so the outer gradient shows through
       >
         {/* Three-pane preview: RIGHT list / CENTER viewer / LEFT meta */}
         <div className="flex h-full">
           {/* RIGHT: simple list to suggest content panel */}
           <aside
-            className="w-[110px] bg-white border-l border-gray-200"
-            style={{ background: sidebarBg }}
+            className="w-[110px] border-l border-gray-200"
+            // transparent so it doesn't restart the gradient
+            style={{ background: "transparent" }}
           >
             <div
               className="h-12 shrink-0 flex items-center justify-center overflow-hidden"
-              style={{ background: t.logoBg }}
+              // transparent so the gradient doesn't restart in the logo strip
+              style={{ background: "transparent" }}
             >
               {logoUrl ? (
                 <img src={logoUrl} alt="" className="h-5 object-contain" />
@@ -131,7 +135,10 @@ export default function ThemePreview({
               </div>
               <div
                 className="h-6 px-2 text-[10px] grid place-items-center rounded"
-                style={{ background: t.buttonHoverColor }}
+                style={{
+                  background: t.buttonHoverColor,
+                  color: getContrastColor(t.buttonHoverColor || t.buttonBg),
+                }}
               >
                 Item B
               </div>
@@ -141,21 +148,19 @@ export default function ThemePreview({
             </div>
           </aside>
 
-          {/* CENTER: viewer area — full height, two-up, no gap, aspect kept */}
+          {/* CENTER: viewer area */}
           <div
             className="flex-1 min-w-0 flex items-stretch justify-center overflow-hidden"
-            style={{ background: contentBg }}
+            style={{ background: "transparent" }}
           >
             <div className="h-full max-w-full flex items-center justify-center">
               <div className="h-full flex gap-0">
                 <div
-                  className="h-full bg-white border border-gray-300 aspect-[0.707]"
+                  className="h-full bg-white border border-gray-300 aspect-[0.707] grid place-items-center text-gray-400 text-xs select-none"
                   style={{ aspectRatio: "0.707" }}
-                />
-                <div
-                  className="h-full bg-white border border-gray-300 aspect-[0.707]"
-                  style={{ aspectRatio: "0.707" }}
-                />
+                >
+                  <span className="opacity-70">Content Area</span>
+                </div>
               </div>
             </div>
           </div>
@@ -163,12 +168,12 @@ export default function ThemePreview({
           {/* LEFT: meta sidebar (CTA + meta) */}
           <aside
             className="w-[120px] flex flex-col"
-            style={{ background: sidebarBg, color: t.sidebarText }}
+            style={{ background: "transparent", color: t.sidebarText }}
           >
             {/* Contact CTA */}
             <div
               className="p-2 shrink-0 flex items-center justify-center"
-              style={{ background: t.logoBg }}
+              style={{ background: "transparent" }}
             >
               <div
                 className="h-6 px-2 text-[10px] grid place-items-center rounded"
@@ -193,7 +198,6 @@ export default function ThemePreview({
                 <div>{nameContent}</div>
               </div>
             </div>
-
             <div className="flex-1" />
           </aside>
         </div>
