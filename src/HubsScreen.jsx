@@ -4,6 +4,8 @@ import AddContent from "./icons/AddContent";
 import EditIcon from "./icons/EditIcon";
 import PreviewIcon from "./icons/PreviewIcon";
 import DeleteIcon from "./icons/DeleteIcon";
+import HubDesignIcon from "./icons/HubDesignIcon";
+import HubOverviewIcon from "./icons/HubOverviewIcon";
 import { useEffect, useRef, useState } from "react";
 import { db } from "./lib/firebase";
 import {
@@ -79,6 +81,9 @@ export default function HubsScreen() {
   }
   function onPreview(id) {
     window.open(`/prospect/${id}`, "_blank", "noopener,noreferrer");
+  }
+  function onDesign(id) {
+    navigate(`/admin/hubs/${id}/design`);
   }
   function onEdit(id) {
     navigate(`/admin/hubs/${id}/edit`);
@@ -186,6 +191,15 @@ export default function HubsScreen() {
                       <td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
                         <div className="flex items-center justify-end gap-2 flex-nowrap">
                           <ActionButton
+                            title="Edit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(r.id);
+                            }}
+                          >
+                            <HubOverviewIcon className="w-5 h-5" />
+                          </ActionButton>
+                          <ActionButton
                             title="Open"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -195,13 +209,13 @@ export default function HubsScreen() {
                             <AddContent className="w-5 h-5" />
                           </ActionButton>
                           <ActionButton
-                            title="Edit"
+                            title="Edit Design"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onEdit(r.id);
+                              onDesign(r.id);
                             }}
                           >
-                            <EditIcon className="w-5 h-5" />
+                            <HubDesignIcon className="w-5 h-5" />
                           </ActionButton>
                           <ActionButton
                             title="Preview"

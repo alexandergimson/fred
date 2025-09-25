@@ -70,7 +70,7 @@ function HexRow({ value = "#1F50AF", onChange }) {
         inputMode="text"
         spellCheck={false}
         placeholder="#RRGGBB"
-        className="py-2 text-sm outline-none focus:border-[#1F50AF] tracking-wider"
+        className="text-sm outline-none focus:border-[#1F50AF] tracking-wider"
         title="Enter hex (e.g. #1F50AF or #1FA)"
       />
     </div>
@@ -139,28 +139,7 @@ function SolidColorPopover({ anchorRef, open, onClose, value, onChange }) {
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-medium text-gray-800">Solid colour</div>
-          <button
-            className="UserIconBtn w-auto px-3"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-
         <HexRow value={value} onChange={onChange} />
-
-        <div className="mt-3 flex justify-end">
-          <button
-            className="UserPrimaryCta w-auto px-4"
-            onClick={onClose}
-            type="button"
-          >
-            Done
-          </button>
-        </div>
       </div>
     </div>
   );

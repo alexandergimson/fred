@@ -7,6 +7,7 @@ import HubsIcon from "./icons/HubsIcon";
 import AnalyticsIcon from "./icons/AnalyticsIcon";
 import HubOverviewIcon from "./icons/HubOverviewIcon";
 import HubContentIcon from "./icons/HubContentIcon";
+import AddContent from "./icons/AddContent";
 import HubDesignIcon from "./icons/HubDesignIcon";
 
 // logic to handle what items to show
@@ -27,14 +28,14 @@ function getItems(hubId) {
     // --- INSERTED SEPARATOR MARKER ---
     { type: "separator", key: "hub-section" },
     {
-      label: "Hub Content",
-      to: `/admin/hubs/${hubId}/content`,
-      icon: HubContentIcon,
-    },
-    {
       label: "Hub Details",
       to: `/admin/hubs/${hubId}/edit`,
       icon: HubOverviewIcon,
+    },
+    {
+      label: "Hub Content",
+      to: `/admin/hubs/${hubId}/content`,
+      icon: AddContent,
     },
     {
       label: "Hub Design",

@@ -20,7 +20,9 @@ function Field({ label, required, children }) {
       <span className="text-sm text-gray-600">
         {label} {required && <span className="text-red-500">*</span>}
       </span>
-      <div className="mt-1">{children}</div>
+      <div className="mt-1 px-3 py-2 border border-gray-200 rounded-md">
+        {children}
+      </div>
     </label>
   );
 }
@@ -28,7 +30,7 @@ function TextInput(props) {
   return (
     <input
       {...props}
-      className={`w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1F50AF] ${
+      className={`w-full rounded-md border border-gray-200 hover:border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1F50AF] ${
         props.className || ""
       }`}
     />
@@ -185,7 +187,7 @@ export default function EditHubScreen() {
                   <div>
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                       <BgField
-                        label="Sidebar background"
+                        label="Background Colour"
                         mode={form.prospectTheme.sidebarBgMode}
                         setMode={(v) =>
                           update("prospectTheme.sidebarBgMode", v)
@@ -197,10 +199,8 @@ export default function EditHubScreen() {
                           update("prospectTheme.sidebarGradient", g)
                         }
                       />
-
                       <Field label="Sidebar text">
                         <ColorInput
-                          withModal
                           value={form.prospectTheme.sidebarText}
                           onChange={(v) =>
                             update("prospectTheme.sidebarText", v)
@@ -210,7 +210,6 @@ export default function EditHubScreen() {
 
                       <Field label="Button background">
                         <ColorInput
-                          withModal
                           value={form.prospectTheme.buttonBg}
                           onChange={(v) => update("prospectTheme.buttonBg", v)}
                         />
@@ -218,7 +217,6 @@ export default function EditHubScreen() {
 
                       <Field label="Button text">
                         <ColorInput
-                          withModal
                           value={form.prospectTheme.buttonText}
                           onChange={(v) =>
                             update("prospectTheme.buttonText", v)
@@ -228,7 +226,6 @@ export default function EditHubScreen() {
 
                       <Field label="Button hover background">
                         <ColorInput
-                          withModal
                           value={form.prospectTheme.buttonHoverColor}
                           onChange={(v) =>
                             update("prospectTheme.buttonHoverColor", v)

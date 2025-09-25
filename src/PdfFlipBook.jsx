@@ -1,4 +1,4 @@
-// PdfFlipBook.jsx — stable on resize (no remount/flicker)
+// PdfFlipBook.jsx — accepts fileUrl OR url, stacks on narrow
 import React, {
   useEffect,
   useMemo,
@@ -46,6 +46,7 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
   const canvasRef = useRef(null);
   const pageRef = useRef(null);
   const renderTaskRef = useRef(null);
+
   useEffect(() => {
     let cancelled = false;
     if (!pdf || !width || !height || !canvasRef.current) return;
@@ -64,6 +65,7 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
       canvas.style.width = `${vp.width}px`;
       canvas.style.height = `${vp.height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       try {
         renderTaskRef.current?.cancel?.();
       } catch {}
@@ -82,8 +84,10 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
       const page = pageRef.current || (await pdf.getPage(pageNumber));
       if (cancelled) return;
       pageRef.current = page;
+
       const vp1 = page.getViewport({ scale: 1 });
       const scale = Math.min(width / vp1.width, height / vp1.height);
+
       try {
         await queue.enqueue(() => renderAt(page, scale, 1));
       } catch (err) {
@@ -107,22 +111,25 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
 
 const PdfFlipBook = forwardRef(function PdfFlipBook(
   {
-    url,
+    fileUrl, // preferred
+    url, // legacy support
+    layout = "spread", // "spread" | "single"
+    gap = 16,
+    pageAspect = 1.4142,
     maxConcurrent = 1,
     verticalPad = 32,
     minWidth = 320,
     maxWidth = 1400,
     minHeight = 400,
     maxHeight = 2000,
-    gap = 16,
-    forceTwoUp = true,
-    showCover = false, // default to spread [1|2]
-    showInternalArrows = false,
+    showCover = false,
     onFlip,
     onMeasure,
   },
   ref
 ) {
+  const src = fileUrl || url || null;
+
   const containerRef = useRef(null);
   const flipRef = useRef(null);
 
@@ -131,7 +138,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   const [error, setError] = useState(null);
   const [vw, setVw] = useState(0);
   const [vh, setVh] = useState(0);
-  const [ratio, setRatio] = useState(1.4142);
+  const [ratio, setRatio] = useState(pageAspect || 1.4142);
   const loadedDocRef = useRef(null);
 
   const queue = useMemo(
@@ -139,7 +146,6 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     [maxConcurrent]
   );
 
-  // one-frame gate to avoid StrictMode training mount paint
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setReady(true));
@@ -164,7 +170,6 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     []
   );
 
-  // destroy flipbook on unmount
   useEffect(
     () => () => {
       try {
@@ -174,23 +179,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     []
   );
 
-  // external flip callback
-  useEffect(() => {
-    if (!onFlip) return;
-    const inst = flipRef.current?.getPageFlip?.();
-    if (!inst) return;
-    const handler = (e) => {
-      const idx =
-        e && e.data && typeof e.data.page === "number"
-          ? e.data.page
-          : inst.getCurrentPageIndex?.();
-      if (typeof idx === "number") onFlip(idx + 1);
-    };
-    inst.on("flip", handler);
-    return () => inst.off("flip", handler);
-  }, [onFlip, pdf]);
-
-  // throttle ResizeObserver to rAF (no rapid remounts)
+  // ResizeObserver
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -209,7 +198,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     const ro = new ResizeObserver(onResize);
     ro.observe(el);
     window.addEventListener("resize", onResize);
-    onResize(); // initial
+    onResize();
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", onResize);
@@ -217,19 +206,19 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [verticalPad]);
 
-  // load PDF (streaming) + destroy on cleanup
+  // Load PDF
   useEffect(() => {
     let cancelled = false;
     let task = null;
     loadedDocRef.current = null;
 
     (async () => {
-      if (!url) return;
+      if (!src) return;
       setError(null);
       setPdf(null);
       setNumPages(0);
       task = pdfjsLib.getDocument({
-        url,
+        url: src,
         disableStream: false,
         disableAutoFetch: false,
         rangeChunkSize: 64 * 1024,
@@ -259,10 +248,10 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
         loadedDocRef.current = null;
       } catch {}
     };
-  }, [url]);
+  }, [src]);
 
-  // compute sizes so two pages fit height and width
-  const dims = useMemo(() => {
+  // Dimensions (spread)
+  const spreadDims = useMemo(() => {
     if (!vw || !vh) return null;
     let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
     let pageW = Math.max(
@@ -283,10 +272,32 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [vw, vh, ratio, minWidth, maxWidth, minHeight, maxHeight, gap]);
 
+  // Dimensions (single)
+  const singleDims = useMemo(() => {
+    if (!vw || !vh) return null;
+    let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
+    let pageW = Math.max(
+      minWidth,
+      Math.min(Math.floor(pageH / ratio), maxWidth)
+    );
+    if (pageW > vw) {
+      const s = vw / pageW;
+      pageW = Math.floor(pageW * s);
+      pageH = Math.floor(pageH * s);
+    }
+    return {
+      pageWidth: pageW,
+      pageHeight: pageH,
+      bookWidth: Math.min(vw, pageW),
+      bookHeight: pageH,
+    };
+  }, [vw, vh, ratio, minWidth, maxWidth, minHeight, maxHeight]);
+
+  const dims = layout === "single" ? singleDims : spreadDims;
   const totalPages = numPages;
 
-  // Report size to parent (only when we actually have dims & pages)
-  React.useEffect(() => {
+  // report size
+  useEffect(() => {
     if (dims && totalPages) {
       onMeasure?.({
         pageWidth: dims.pageWidth,
@@ -297,15 +308,13 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     }
   }, [dims, totalPages, onMeasure]);
 
-  // IMPORTANT: key ONLY by file + page count + layout flags (NOT size)
+  // stable key
   const flipKey = useMemo(() => {
-    if (!url || !totalPages) return "pending";
-    return `${url}|${totalPages}|${showCover ? "cover" : "spread"}|${
-      forceTwoUp ? "2up" : "auto"
-    }`;
-  }, [url, totalPages, showCover, forceTwoUp]);
+    if (!src || !totalPages) return "pending";
+    return `${src}|${totalPages}|${layout}|${showCover ? "cover" : "nocover"}`;
+  }, [src, totalPages, layout, showCover]);
 
-  if (!url) return null;
+  if (!src) return null;
 
   return (
     <div ref={containerRef} className="w-full h-full relative overflow-hidden">
@@ -315,87 +324,74 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
         <div className="w-full h-full grid place-items-center">
           <div className="w-80 h-96 bg-gray-100 rounded-md animate-pulse" />
         </div>
+      ) : layout === "single" ? (
+        <div
+          className="mx-auto"
+          style={{
+            width: `${dims.bookWidth}px`,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: `${gap}px`,
+          }}
+        >
+          {Array.from({ length: totalPages }, (_, i) => {
+            const pageNumber = i + 1;
+            return (
+              <div key={pageNumber}>
+                <CanvasPage
+                  pdf={pdf}
+                  pageNumber={pageNumber}
+                  width={dims.pageWidth}
+                  height={dims.pageHeight}
+                  queue={queue}
+                />
+              </div>
+            );
+          })}
+        </div>
       ) : (
-        <>
-          <div
-            className="mx-auto"
-            style={{
-              width: `${dims.bookWidth}px`,
-              height: `${dims.bookHeight}px`,
-            }}
+        <div
+          className="mx-auto"
+          style={{
+            width: `${dims.bookWidth}px`,
+            height: `${dims.bookHeight}px`,
+          }}
+        >
+          <HTMLFlipBook
+            key={flipKey}
+            width={dims.pageWidth}
+            height={dims.pageHeight}
+            size="stretch"
+            minWidth={minWidth}
+            maxWidth={maxWidth}
+            minHeight={minHeight}
+            maxHeight={maxHeight}
+            showCover={showCover}
+            mobileScrollSupport={true}
+            usePortrait={false}
+            startPage={0}
+            maxShadowOpacity={0.5}
+            className="shadow"
+            style={{ margin: "0 auto" }}
+            ref={flipRef}
           >
-            <HTMLFlipBook
-              key={flipKey} // stable across resizes
-              width={dims.pageWidth}
-              height={dims.pageHeight}
-              size="stretch"
-              minWidth={minWidth}
-              maxWidth={maxWidth}
-              minHeight={minHeight}
-              maxHeight={maxHeight}
-              showCover={showCover} // default false → first spread [1|2]
-              mobileScrollSupport={true}
-              usePortrait={!forceTwoUp || showCover} // single cover if cover=true
-              startPage={0}
-              maxShadowOpacity={0.5}
-              className="shadow"
-              style={{ margin: "0 auto" }}
-              ref={flipRef}
-            >
-              {Array.from({ length: totalPages }, (_, i) => {
-                const pageNumber = i + 1;
-                return (
-                  <BookPage key={pageNumber}>
-                    <CanvasPage
-                      pdf={pdf}
-                      pageNumber={pageNumber}
-                      width={dims.pageWidth}
-                      height={dims.pageHeight}
-                      queue={queue}
-                    />
-                  </BookPage>
-                );
-              })}
-            </HTMLFlipBook>
-          </div>
-
-          {showInternalArrows && (
-            <>
-              <button
-                type="button"
-                aria-label="Previous"
-                onClick={() => flipRef.current?.getPageFlip()?.flipPrev()}
-                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full shadow p-2 bg-white/90 hover:bg-white"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M15 6l-6 6 6 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+            {Array.from({ length: totalPages }, (_, i) => {
+              const pageNumber = i + 1;
+              return (
+                <BookPage key={pageNumber}>
+                  <CanvasPage
+                    pdf={pdf}
+                    pageNumber={pageNumber}
+                    width={dims.pageWidth}
+                    height={dims.pageHeight}
+                    queue={queue}
                   />
-                </svg>
-              </button>
-              <button
-                type="button"
-                aria-label="Next"
-                onClick={() => flipRef.current?.getPageFlip()?.flipNext()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full shadow p-2 bg-white/90 hover:bg-white"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M9 6l6 6-6 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </>
-          )}
-        </>
+                </BookPage>
+              );
+            })}
+          </HTMLFlipBook>
+        </div>
       )}
     </div>
   );

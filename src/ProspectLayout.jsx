@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { db } from "./lib/firebase";
 import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
 import ProspectMetaSidebar from "./ProspectSidebarRight";
-import SideBar from "./ProspectSidebarLeft"; // right list
+import SideBar from "./ProspectSidebarLeft"; // left list
 import Main from "./ProspectContentViewer"; // center PDF/Image/Embed
 
 // contrast util
@@ -17,6 +17,7 @@ function getContrastColor(hex) {
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 128 ? "#000" : "#fff";
 }
+
 const cssGradient = (g) => {
   if (!g || !Array.isArray(g.stops) || g.stops.length < 2) return null;
   const angle = typeof g.angle === "number" ? `${g.angle}deg` : "135deg";
@@ -25,6 +26,7 @@ const cssGradient = (g) => {
   );
   return `linear-gradient(${angle}, ${parts.join(", ")})`;
 };
+
 const bgValue = (mode, solid, gradient) =>
   mode === "gradient" ? cssGradient(gradient) || solid : solid;
 
@@ -114,27 +116,27 @@ export default function ProspectLayout() {
     "--pv-header-height": "5rem", // used as a vertical rhythm unit
   };
 
+  // shared width + safeguard for both sidebars
+  const sidebarStyle = { width: "16vw", minWidth: "200px" };
+
   return (
-    // Paint the gradient once here
     <div
       className="flex h-screen overflow-hidden"
       style={{ ...cssVars, background: "var(--pv-sidebar-bg)" }}
     >
-      {/* RIGHT: your existing list (logo area & items) */}
+      {/* LEFT: list */}
       <SideBar
         logoUrl={hub?.logoUrl}
         items={sortedItems}
         activeId={activeId}
         onSelect={setActiveId}
+        style={sidebarStyle}
       />
 
-      {/* CENTER: viewer — fills all remaining height/width */}
+      {/* CENTER: viewer — fills remaining space */}
       <div
         className="flex-1 min-w-0"
-        style={{
-          background: "transparent", // don't restart gradient
-          width: bookSize?.bookWidth ? `${bookSize.bookWidth}px` : "auto",
-        }}
+        style={{ background: "transparent", width: "100%" }}
       >
         <div className="h-full w-full overflow-hidden">
           <Main
@@ -142,16 +144,22 @@ export default function ProspectLayout() {
             content={activeItem}
             contactHref={hub?.contactLink || null}
             onMeasure={setBookSize}
+            containerStyle={{
+              width: bookSize?.bookWidth
+                ? `min(100%, ${bookSize.bookWidth}px)`
+                : "100%",
+            }}
           />
         </div>
       </div>
 
-      {/* LEFT: meta sidebar (CTA + names) */}
+      {/* RIGHT: meta sidebar (CTA + names) */}
       <ProspectMetaSidebar
         hubTitle={hub?.name || "Hub"}
         contentName={activeItem?.name || "—"}
         contactHref={hub?.contactLink || null}
         onSelect={setActiveId}
+        style={sidebarStyle}
       />
     </div>
   );

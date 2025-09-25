@@ -1,18 +1,14 @@
 const HubOverviewIcon = ({ className = "w-5 h-5", ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.5}
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    viewBox="0 0 1024 1024"
+    fill="currentColor"
     className={className}
+    aria-hidden="true"
     {...props}
   >
-    <rect x="3" y="4" width="6" height="16" rx="2" />
-    <rect x="10" y="4" width="4" height="16" rx="2" />
-    <rect x="15" y="4" width="6" height="16" rx="2" />
+    <path d="M320 89.6h640v76.8H320V89.6z m0 768h640v76.8H320v-76.8z m-256-768h128v76.8H64V89.6z m256 384h640v76.8H320V473.6z m-256 0h128v76.8H64V473.6z m0 384h128v76.8H64v-76.8z" />
   </svg>
 );
+
 export default HubOverviewIcon;
