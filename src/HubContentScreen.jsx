@@ -182,6 +182,10 @@ export default function HubContentScreen() {
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
             title={`${hubName} | Content`}
+            secondaryAction={{
+              label: "Preview Hub",
+              href: `/prospect/${hubId}`,
+            }}
             action={{
               label: "Add content",
               to: `/admin/hubs/${hubId}/content/new`,

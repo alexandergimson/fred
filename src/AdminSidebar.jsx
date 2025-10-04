@@ -22,7 +22,7 @@ function getItems(hubId) {
     { label: "Hubs", to: "/admin/hubs", icon: HubsIcon, exact: true },
     {
       label: "Analytics",
-      to: `/admin/hubs/${hubId}/analytics`,
+      to: `/admin/analytics`,
       icon: AnalyticsIcon,
     },
     // --- INSERTED SEPARATOR MARKER ---
@@ -41,6 +41,11 @@ function getItems(hubId) {
       label: "Hub Design",
       to: `/admin/hubs/${hubId}/design`,
       icon: HubDesignIcon,
+    },
+    {
+      label: "Hub Analytics",
+      to: `/admin/analytics/hubs/${hubId}`,
+      icon: AnalyticsIcon,
     },
   ];
 }
@@ -71,7 +76,10 @@ const AdminSidebar = () => {
 
   // Extract hubId via router-aware matching
   const hubId = useMemo(() => {
-    const match = matchPath({ path: "/admin/hubs/:hubId/*" }, pathname);
+    const match = [
+      matchPath({ path: "/admin/hubs/:hubId/*" }, pathname),
+      matchPath({ path: "/admin/analytics/hubs/:hubId" }, pathname),
+    ].find((m) => m !== null);
     return match?.params?.hubId ?? null;
   }, [pathname]);
 

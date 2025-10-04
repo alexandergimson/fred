@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
 import { db, storage, auth } from "./lib/firebase";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import DropzoneModal from "./DropzoneModal";
 import ThemePreview from "./ThemePreview";
 import SaveIcon from "./icons/SaveIcon";
 
@@ -52,7 +51,6 @@ export default function EditHubScreen() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [logoModalOpen, setLogoModalOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -161,6 +159,31 @@ export default function EditHubScreen() {
       ? form.logo
       : null;
 
+  // === Inline Dropzone (no modal) ===
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const [error, setError] = useState("");
+  const MAX_BYTES = 8 * 1024 * 1024; // 8MB
+
+  function validateAndSet(file) {
+    if (!file) return;
+    if (file.size > MAX_BYTES) {
+      setError(
+        `File too large. Max ${(MAX_BYTES / (1024 * 1024)).toFixed(0)}MB.`
+      );
+      return;
+    }
+    setError("");
+    update("logo", { file, url: URL.createObjectURL(file) });
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer?.files?.[0];
+    validateAndSet(f);
+  }
+
   if (loading) return <div className="p-6">Loading…</div>;
 
   return (
@@ -168,7 +191,11 @@ export default function EditHubScreen() {
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
-            title={`${hubName} | details`}
+            title={`${hubName} | design`}
+            secondaryAction={{
+              label: "Preview Hub",
+              href: `/prospect/${hubId}`,
+            }}
             action={{
               label: "Save changes",
               onClick: save,
@@ -200,7 +227,31 @@ export default function EditHubScreen() {
 
                 <div className="lg:col-span-1">
                   <div className="mb-2 text-sm text-gray-600">Logo</div>
-                  <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white overflow-hidden">
+
+                  {/* Dropzone */}
+                  <input
+                    id="logoInput"
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => validateAndSet(e.target.files?.[0])}
+                  />
+                  <label
+                    htmlFor="logoInput"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragging(true);
+                    }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={onDrop}
+                    className={[
+                      "flex h-40 w-full items-center justify-center rounded-lg border border-dashed overflow-hidden cursor-pointer",
+                      dragging
+                        ? "border-[#1F50AF] bg-[#F4F7FE]"
+                        : "border-gray-300 bg-white",
+                    ].join(" ")}
+                  >
                     {previewSrc ? (
                       <img
                         src={previewSrc}
@@ -210,17 +261,22 @@ export default function EditHubScreen() {
                     ) : (
                       <div className="text-sm text-gray-500 text-center px-3">
                         <div className="mb-1 font-medium text-gray-700">
-                          Upload an image
+                          Click to upload or drag & drop
                         </div>
-                        <div>PNG, JPG, SVG, or WebP</div>
+                        <div>PNG, JPG, SVG, or WebP (max 8MB)</div>
                       </div>
                     )}
-                  </div>
+                  </label>
+
+                  {error ? (
+                    <div className="mt-2 text-xs text-red-600">{error}</div>
+                  ) : null}
+
                   <div className="mt-3 flex items-center gap-2">
                     <button
                       type="button"
                       className="UserPrimaryCta w-35 px-4"
-                      onClick={() => setLogoModalOpen(true)}
+                      onClick={() => inputRef.current?.click()}
                     >
                       {previewSrc ? "Replace logo" : "Upload logo"}
                     </button>
@@ -241,21 +297,6 @@ export default function EditHubScreen() {
           </div>
         </div>
       </div>
-
-      {/* Logo upload modal */}
-      <DropzoneModal
-        open={logoModalOpen}
-        onClose={() => setLogoModalOpen(false)}
-        onSelect={(file) => {
-          update("logo", { file, url: URL.createObjectURL(file) });
-          setLogoModalOpen(false);
-        }}
-        accept="image/*"
-        maxBytes={8 * 1024 * 1024}
-        title="Upload logo"
-        subtitle="PNG, JPG, SVG or WebP"
-        helper="Max 8MB"
-      />
     </main>
   );
 }

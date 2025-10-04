@@ -94,7 +94,7 @@
     @apply inline-flex items-center justify-center h-10 w-10 rounded-full shrink-0
            bg-background text-gray-700 cursor-pointer
            ring-1 ring-black/5
-           shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
+           shadow-sm hover:bg-primary hover:shadow-md hover:text-white active:shadow-sm active:translate-y-px
            transform-gpu
            transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
@@ -109,7 +109,7 @@
            transform-gpu
            transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
-           disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px] hover:bg-red-600;
+           disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px] hover:bg-danger hover:text-white;
   }
 
   /* Stack on UserIconBtn or UserPrimaryCta for destructive/confirm states */

@@ -171,6 +171,10 @@ export default function EditHubScreen() {
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
             title={`${hubName} | design`}
+            secondaryAction={{
+              label: "Preview Hub",
+              href: `/prospect/${hubId}`,
+            }}
             action={{
               label: "Save changes",
               onClick: save,

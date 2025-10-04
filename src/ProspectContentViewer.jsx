@@ -1,6 +1,7 @@
 // prospect_main.jsx
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import PdfFlipBook from "./PdfFlipBook";
+import { trackContentView } from "./lib/track";
 
 // Converts a share URL (YouTube, Vimeo, Loom, Google Drive) into an embeddable iframe src
 function toEmbed(url, title = "Embed") {
@@ -91,7 +92,18 @@ function toEmbed(url, title = "Embed") {
   }
 }
 
-export default function ProspectMain({ content, onMeasure }) {
+export default function ProspectMain({ content, onMeasure, hubId, shareId }) {
+  // Track views whenever active content changes
+  useEffect(() => {
+    if (hubId && content?.id) {
+      trackContentView({
+        hubId,
+        shareId: shareId ?? null,
+        contentId: content.id,
+      });
+    }
+  }, [hubId, shareId, content?.id]);
+
   const fileUrl = content?.fileUrl || "";
   const isPdf = useMemo(
     () => typeof fileUrl === "string" && /\.pdf($|\?)/i.test(fileUrl),

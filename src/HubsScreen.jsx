@@ -33,7 +33,9 @@ function ActionButton({ children, title, onClick, confirm, label, danger }) {
       onClick={handleClick}
       className={
         expanded
-          ? "UserIconBtn UserDanger w-28 px-4 shadow-md hover:shadow-lg"
+          ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
+          : danger
+          ? "UserIconBtnDanger"
           : "UserIconBtn"
       }
     >
@@ -141,14 +143,13 @@ export default function HubsScreen() {
                     <tr
                       key={r.id}
                       className="bg-white border-b border-gray-400 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => onOpen(r.id)}
+                      onClick={() => onEdit(r.id)}
                       onKeyDown={(e) =>
-                        (e.key === "Enter" || e.key === " ") && onOpen(r.id)
+                        (e.key === "Enter" || e.key === " ") && onEdit(r.id)
                       }
                       role="button"
                       tabIndex={0}
                     >
-                      {/* Name — truncate on small so it doesn't overflow */}
                       <td className="px-4 py-4 text-base">
                         <button
                           onClick={(e) => {
@@ -161,8 +162,6 @@ export default function HubsScreen() {
                           {r.name}
                         </button>
                       </td>
-
-                      {/* Logo — hidden on < md */}
                       <td className="px-4 py-4 hidden md:table-cell">
                         {r.logoUrl ? (
                           <img
@@ -174,24 +173,18 @@ export default function HubsScreen() {
                           "—"
                         )}
                       </td>
-
-                      {/* Industry — hidden on < sm */}
                       <td className="px-4 py-4 text-base hidden sm:table-cell">
                         {r.industry || "—"}
                       </td>
-
-                      {/* Created — always visible */}
                       <td className="px-4 py-4 text-base">
                         {r.createdAt?.toDate
                           ? r.createdAt.toDate().toLocaleDateString()
                           : "…"}
                       </td>
-
-                      {/* Actions — width scales with breakpoint */}
                       <td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
                         <div className="flex items-center justify-end gap-2 flex-nowrap">
                           <ActionButton
-                            title="Edit"
+                            title="Edit details"
                             onClick={(e) => {
                               e.stopPropagation();
                               onEdit(r.id);
@@ -200,7 +193,7 @@ export default function HubsScreen() {
                             <HubOverviewIcon className="w-5 h-5" />
                           </ActionButton>
                           <ActionButton
-                            title="Open"
+                            title="Add content"
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpen(r.id);
@@ -209,7 +202,7 @@ export default function HubsScreen() {
                             <AddContent className="w-5 h-5" />
                           </ActionButton>
                           <ActionButton
-                            title="Edit Design"
+                            title="Edit design"
                             onClick={(e) => {
                               e.stopPropagation();
                               onDesign(r.id);
@@ -238,6 +231,7 @@ export default function HubsScreen() {
                           ) : (
                             <ActionButton
                               title="Delete"
+                              danger
                               onClick={() => setConfirmDeleteId(r.id)}
                             >
                               <DeleteIcon className="w-5 h-5" />

@@ -31,7 +31,7 @@ const bgValue = (mode, solid, gradient) =>
   mode === "gradient" ? cssGradient(gradient) || solid : solid;
 
 export default function ProspectLayout() {
-  const { hubId } = useParams();
+  const { hubId, shareId } = useParams(); // shareId is optional depending on your route
   const [hub, setHub] = useState(null);
   const [items, setItems] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -72,6 +72,14 @@ export default function ProspectLayout() {
       return (a.name || "").localeCompare(b.name || "");
     });
   }, [items]);
+
+  useEffect(() => {
+    if (hub?.name) {
+      document.title = `${hub.name} Content Hub`;
+    } else {
+      document.title = `Loading...`;
+    }
+  }, [hub]);
 
   useEffect(() => {
     if (!activeId && sortedItems.length > 0) setActiveId(sortedItems[0].id);
@@ -144,6 +152,8 @@ export default function ProspectLayout() {
             content={activeItem}
             contactHref={hub?.contactLink || null}
             onMeasure={setBookSize}
+            hubId={hubId}
+            shareId={shareId ?? null}
             containerStyle={{
               width: bookSize?.bookWidth
                 ? `min(100%, ${bookSize.bookWidth}px)`

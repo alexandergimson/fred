@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HubScreenHeader from "./HubScreenHeader";
 import { useNavigate } from "react-router-dom";
 import ThemePreview from "./ThemePreview";
@@ -12,7 +12,6 @@ import {
   doc,
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import DropzoneModal from "./DropzoneModal";
 
 /* shared theme bits */
 import ColorInput from "./theme/ColorInput";
@@ -41,16 +40,132 @@ function TextInput(props) {
   );
 }
 
+/* ---------- helpers (inline dropzone bits) ---------- */
+function isImageFile(file) {
+  return (file?.type || "").startsWith("image/");
+}
+
+/** Inline image-only dropzone (max 8MB) */
+function InlineImageDropzone({
+  selectedFile, // File | null
+  onPick, // (file: File) => void
+  accept = "image/*",
+  maxBytes = 8 * 1024 * 1024,
+  triggerRef, // ref to expose a .click() trigger
+}) {
+  const inputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!triggerRef) return;
+    triggerRef.current = () => inputRef.current?.click();
+  }, [triggerRef]);
+
+  function validate(file) {
+    if (!file) return false;
+    if (!isImageFile(file)) {
+      alert("Please pick an image file (PNG, JPG, SVG, or WebP).");
+      return false;
+    }
+    if (file.size > maxBytes) {
+      alert(`File too large. Max ${(maxBytes / (1024 * 1024)).toFixed(0)} MB.`);
+      return false;
+    }
+    return true;
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!validate(file)) return;
+    onPick?.(file);
+  }
+
+  const inner = (() => {
+    if (selectedFile) {
+      return (
+        <div className="flex items-center gap-3 px-4">
+          <img
+            src={URL.createObjectURL(selectedFile)}
+            alt="Logo preview"
+            className="h-14 object-contain"
+          />
+          <div className="text-sm">
+            <div className="font-medium text-gray-800 truncate max-w-[220px]">
+              {selectedFile.name}
+            </div>
+            <div className="text-gray-500">
+              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="text-sm text-gray-600 text-center px-4">
+        <div className="font-medium text-gray-700">Upload a logo</div>
+        <div className="text-gray-500">
+          Click to choose or drag & drop (PNG, JPG, SVG, WebP — Max 8MB)
+        </div>
+      </div>
+    );
+  })();
+
+  return (
+    <div className="w-full">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) =>
+          (e.key === "Enter" || e.key === " ") && inputRef.current?.click()
+        }
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          handleFile(f);
+        }}
+        className={[
+          "flex h-40 w-full items-center justify-center rounded-lg border-2 border-dashed transition-colors",
+          dragOver
+            ? "border-[#1F50AF] bg-[#1F50AF]/5"
+            : "border-gray-300 bg-white",
+          "cursor-pointer",
+        ].join(" ")}
+        title="Click to upload or drag & drop"
+      >
+        {inner}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- main ---------- */
 export default function CreateHubScreen() {
   const [form, setForm] = useState({
     name: "",
     contactLink: "",
-    prospectTheme: defaultProspectTheme, // gradient-capable defaults
+    prospectTheme: defaultProspectTheme,
     logo: null, // { file, url }
   });
-  const [logoModalOpen, setLogoModalOpen] = useState(false);
 
+  const openPickerRef = useRef(null);
   const navigate = useNavigate();
 
   const update = (path, value) => {
@@ -108,8 +223,8 @@ export default function CreateHubScreen() {
     }
   };
 
-  const previewSrc =
-    form.logo && typeof form.logo === "object" ? form.logo.url : null;
+  const previewFile =
+    form.logo && typeof form.logo === "object" ? form.logo.file : null;
 
   return (
     <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
@@ -122,7 +237,7 @@ export default function CreateHubScreen() {
 
           <div className="flex-1 overflow-auto px-6 pb-4">
             <div className="space-y-10 max-w-screen-2xl mx-auto">
-              {/* Top row: left inputs, right logo area */}
+              {/* Top row: left inputs, right inline logo upload */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <div className="lg:col-span-1 grid grid-cols-1 gap-4">
                   <Field label="Hub Name" required>
@@ -142,43 +257,28 @@ export default function CreateHubScreen() {
                   </Field>
                 </div>
 
-                {/* Right: logo preview + modal trigger (matches Edit) */}
+                {/* Right: inline logo dropzone + controls */}
                 <div className="lg:col-span-1">
                   <div className="mb-2 text-sm text-gray-600">Logo</div>
-                  <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white overflow-hidden">
-                    {previewSrc ? (
-                      <img
-                        src={previewSrc}
-                        alt="Logo preview"
-                        className="h-24 max-w-full object-contain"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-500 text-center px-3">
-                        <div className="mb-1 font-medium text-gray-700">
-                          Upload an image
-                        </div>
-                        <div>PNG, JPG, SVG, or WebP</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
+
+                  <InlineImageDropzone
+                    selectedFile={previewFile}
+                    onPick={(file) =>
+                      update("logo", { file, url: URL.createObjectURL(file) })
+                    }
+                    accept="image/*"
+                    maxBytes={8 * 1024 * 1024}
+                    triggerRef={openPickerRef}
+                  />
+
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
                     <button
                       type="button"
-                      className="UserPrimaryCta w-35 px-4"
-                      onClick={() => setLogoModalOpen(true)}
+                      className="UserPrimaryCta w-auto px-4"
+                      onClick={() => openPickerRef.current?.()}
                     >
-                      {previewSrc ? "Replace logo" : "Upload logo"}
+                      {previewFile ? "Choose another…" : "Upload…"}
                     </button>
-                    {previewSrc && (
-                      <button
-                        type="button"
-                        className="UserSecondaryCta w-35 px-3"
-                        onClick={() => update("logo", null)}
-                        title="Remove current logo"
-                      >
-                        Remove
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -186,21 +286,6 @@ export default function CreateHubScreen() {
           </div>
         </div>
       </div>
-
-      {/* Logo upload modal */}
-      <DropzoneModal
-        open={logoModalOpen}
-        onClose={() => setLogoModalOpen(false)}
-        onSelect={(file) => {
-          update("logo", { file, url: URL.createObjectURL(file) });
-          setLogoModalOpen(false);
-        }}
-        accept="image/*"
-        maxBytes={8 * 1024 * 1024}
-        title="Upload logo"
-        subtitle="PNG, JPG, SVG or WebP"
-        helper="Max 8MB"
-      />
     </main>
   );
 }
