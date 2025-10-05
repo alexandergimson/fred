@@ -97,7 +97,7 @@ export default function BgField({
           ref={ref}
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full flex items-center gap-3 rounded-md border border-gray-200 px-3 py-2 text-sm hover:border-gray-300 transition cursor-pointer"
+          className="w-full flex items-center gap-3 rounded-md border border-gray-200 px-3 py-2 text-xs hover:border-gray-300 transition cursor-pointer"
         >
           <div
             className="h-7 w-7 rounded-md border border-gray-200 overflow-hidden"

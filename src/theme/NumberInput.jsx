@@ -8,7 +8,7 @@ export default function NumberInput({
   ...props
 }) {
   const base =
-    "w-10 px-2 py-2 text-sm outline-none " +
+    "w-10 px-2 py-2 text-xs outline-none " +
     // no border or focus border here
     "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 

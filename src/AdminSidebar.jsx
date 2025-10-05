@@ -15,7 +15,7 @@ function getItems(hubId) {
   if (!hubId) {
     return [
       { label: "Hubs", to: "/admin/hubs", icon: HubsIcon, exact: true },
-      // 👇 make Analytics exact so it doesn't match /admin/analytics/hubs/...
+      // make Analytics exact so it doesn't match /admin/analytics/hubs/...
       {
         label: "Analytics",
         to: "/admin/analytics",
@@ -58,7 +58,7 @@ function getItems(hubId) {
 }
 
 const baseLinkClasses =
-  "w-40 h-10 m-2 flex items-center gap-3 pl-3 rounded-lg text-base font-poppins transition-colors cursor-pointer";
+  "w-40 h-10 m-2 flex items-center gap-3 pl-3 rounded-lg text-sm font-poppins transition-colors cursor-pointer";
 const activeClasses = "bg-background text-primary shadow-sm";
 const inactiveClasses =
   "text-textinactive hover:bg-buttonhover hover:text-primaryvariant";

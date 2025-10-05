@@ -204,13 +204,13 @@ export default function HubContentScreen() {
                   <col className="w-[320px]" /> {/* Actions (fixed) */}
                 </colgroup>
 
-                <thead className="sticky top-0 bg-background text-base">
+                <thead className="sticky top-0 bg-background text-sm">
                   <tr>
-                    <th className="text-left px-6 py-4 text-base w-10"></th>
-                    <th className="text-left px-6 py-4 text-base">Name</th>
-                    <th className="text-left px-6 py-4 text-base">Type</th>
-                    <th className="text-left px-6 py-4 text-base">Created</th>
-                    <th className="text-right px-6 py-4 text-base"></th>
+                    <th className="text-left px-6 py-4 w-10"></th>
+                    <th className="text-left px-6 py-4">Name</th>
+                    <th className="text-left px-6 py-4">Type</th>
+                    <th className="text-left px-6 py-4">Created</th>
+                    <th className="text-right px-6 py-4"></th>
                   </tr>
                 </thead>
 
@@ -226,7 +226,7 @@ export default function HubContentScreen() {
                     >
                       {/* Drag handle */}
                       <td
-                        className="px-6 py-4 cursor-grab select-none text-gray-400"
+                        className="px-6 py-4 cursor-move select-none text-gray-400"
                         title="Drag to reorder"
                       >
                         <span className="text-lg leading-none">☰</span>

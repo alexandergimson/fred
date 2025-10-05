@@ -217,55 +217,69 @@ export default function HubAnalyticsScreen() {
               </section>
 
               {/* Content Analytics */}
-              <section className="rounded-lg border border-gray-200 overflow-hidden">
+              {/* Content Analytics */}
+              <section className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
                     <colgroup>
-                      <col className="w-[40%]" />
+                      <col className="w-[44%]" />
+                      <col className="w-[14%]" />
                       <col className="w-[12%]" />
-                      <col className="w-[12%]" />
+                      <col className="w-[14%]" />
                       <col className="w-[16%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[20%]" />
                     </colgroup>
-                    <thead className="sticky top-0 bg-background text-gray-600">
-                      <tr>
-                        <th className="text-left px-6 py-4">Content</th>
-                        <th className="text-left px-6 py-4">Type</th>
-                        <th className="text-left px-6 py-4">Views</th>
-                        <th className="text-left px-6 py-4">Avg. engagement</th>
-                        <th className="text-left px-6 py-4">Completion</th>
-                        <th className="text-left px-6 py-4">Last viewed</th>
+
+                    <thead className="sticky top-0 z-10 text-sm">
+                      <tr className="bg-gray-50/80 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
+                        <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 whitespace-nowrap">
+                          Content
+                        </th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 whitespace-nowrap">
+                          Type
+                        </th>
+                        <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 whitespace-nowrap">
+                          Views
+                        </th>
+                        <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 whitespace-nowrap">
+                          Completion
+                        </th>
+                        <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 whitespace-nowrap">
+                          Last viewed
+                        </th>
                       </tr>
                     </thead>
+
                     <tbody>
-                      {rows.map((r) => (
+                      {rows.map((r, idx) => (
                         <tr
                           key={r.id}
-                          className="bg-white border-b border-gray-200 hover:bg-gray-50"
+                          className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                            idx % 2 === 1 ? "bg-white" : "bg-gray-50/30"
+                          }`}
                         >
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3">
                             <div
-                              className="truncate font-medium"
+                              className="truncate font-medium text-gray-900"
                               title={r.title || r.id}
                             >
                               {r.title || r.id}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-gray-700">
-                            {r.type || "—"}
+                          <td className="px-6 py-3 text-gray-700">
+                            <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-0.5 text-xs bg-white">
+                              {r.type || "—"}
+                            </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3 text-right tabular-nums">
                             {r._metrics.viewCount?.toLocaleString?.() ?? 0}
                           </td>
-                          <td className="px-6 py-4">
-                            {formatDuration(r._metrics.avgEngagementSec)}
-                          </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3 text-right tabular-nums">
                             {formatPct(r._metrics.completionRate)}
                           </td>
-                          <td className="px-6 py-4">
-                            {formatDate(r._metrics.lastViewedAt)}
+                          <td className="px-6 py-3 text-right text-gray-700">
+                            <span title={formatDate(r._metrics.lastViewedAt)}>
+                              {formatDate(r._metrics.lastViewedAt)}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -273,7 +287,7 @@ export default function HubAnalyticsScreen() {
                       {rows.length === 0 && (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={5}
                             className="px-6 py-10 text-center text-gray-500"
                           >
                             No content yet — add items to this hub to see
