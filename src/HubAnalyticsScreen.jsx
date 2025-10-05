@@ -219,7 +219,7 @@ export default function HubAnalyticsScreen() {
               {/* Content Analytics */}
               <section className="rounded-lg border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-base table-auto">
+                  <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
                     <colgroup>
                       <col className="w-[40%]" />
                       <col className="w-[12%]" />
@@ -228,23 +228,23 @@ export default function HubAnalyticsScreen() {
                       <col className="w-[10%]" />
                       <col className="w-[20%]" />
                     </colgroup>
-                    <thead className="bg-gray-50 text-gray-600">
+                    <thead className="sticky top-0 bg-background text-gray-600">
                       <tr>
-                        <th className="text-left px-4 py-3">Content</th>
-                        <th className="text-left px-4 py-3">Type</th>
-                        <th className="text-left px-4 py-3">Views</th>
-                        <th className="text-left px-4 py-3">Avg. engagement</th>
-                        <th className="text-left px-4 py-3">Completion</th>
-                        <th className="text-left px-4 py-3">Last viewed</th>
+                        <th className="text-left px-6 py-4">Content</th>
+                        <th className="text-left px-6 py-4">Type</th>
+                        <th className="text-left px-6 py-4">Views</th>
+                        <th className="text-left px-6 py-4">Avg. engagement</th>
+                        <th className="text-left px-6 py-4">Completion</th>
+                        <th className="text-left px-6 py-4">Last viewed</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr
                           key={r.id}
-                          className="border-t border-gray-200 hover:bg-gray-50"
+                          className="bg-white border-b border-gray-200 hover:bg-gray-50"
                         >
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             <div
                               className="truncate font-medium"
                               title={r.title || r.id}
@@ -252,19 +252,19 @@ export default function HubAnalyticsScreen() {
                               {r.title || r.id}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-gray-700">
+                          <td className="px-6 py-4 text-gray-700">
                             {r.type || "—"}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             {r._metrics.viewCount?.toLocaleString?.() ?? 0}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             {formatDuration(r._metrics.avgEngagementSec)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             {formatPct(r._metrics.completionRate)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             {formatDate(r._metrics.lastViewedAt)}
                           </td>
                         </tr>

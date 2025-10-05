@@ -15,7 +15,13 @@ function getItems(hubId) {
   if (!hubId) {
     return [
       { label: "Hubs", to: "/admin/hubs", icon: HubsIcon, exact: true },
-      { label: "Analytics", to: "/admin/analytics", icon: AnalyticsIcon },
+      // 👇 make Analytics exact so it doesn't match /admin/analytics/hubs/...
+      {
+        label: "Analytics",
+        to: "/admin/analytics",
+        icon: AnalyticsIcon,
+        exact: true,
+      },
     ];
   }
   return [
@@ -24,6 +30,7 @@ function getItems(hubId) {
       label: "Analytics",
       to: `/admin/analytics`,
       icon: AnalyticsIcon,
+      exact: true, // 👈 exact match here too
     },
     // --- INSERTED SEPARATOR MARKER ---
     { type: "separator", key: "hub-section" },
@@ -60,7 +67,7 @@ function SidebarItem({ to, icon: Icon, label, exact }) {
   return (
     <NavLink
       to={to}
-      end={!!exact} // exact match for items like /admin/hubs
+      end={!!exact} // exact match for items like /admin/hubs and /admin/analytics
       className={({ isActive }) =>
         `${baseLinkClasses} ${isActive ? activeClasses : inactiveClasses}`
       }

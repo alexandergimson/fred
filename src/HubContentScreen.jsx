@@ -232,13 +232,11 @@ export default function HubContentScreen() {
                         <span className="text-lg leading-none">☰</span>
                       </td>
 
-                      <td className="px-6 py-4 text-base">
-                        {r.name || "Untitled"}
-                      </td>
+                      <td className="px-6 py-4">{r.name || "Untitled"}</td>
 
-                      <td className="px-6 py-4 text-base">{r.kind || "—"}</td>
+                      <td className="px-6 py-4">{r.kind || "—"}</td>
 
-                      <td className="px-6 py-4 text-base text-gray-500">
+                      <td className="px-6 py-4 text-gray-500">
                         {r.createdAt?.toDate
                           ? r.createdAt.toDate().toLocaleDateString()
                           : "…"}
