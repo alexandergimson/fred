@@ -95,7 +95,7 @@ export default function ThemePreview({
       `}</style>
 
       <div
-        className={`shadow-lg border border-gray-200 overflow-hidden ${className}`}
+        className={`shadow-lg border border-gray-200 rounded-md overflow-hidden ${className}`}
       >
         {/* Single background wrapper */}
         <div
@@ -117,7 +117,7 @@ export default function ThemePreview({
                 <div className="text-[10px] opacity-70">Logo</div>
               )}
             </div>
-            <div className="px-3 pt-4 space-y-2 text-[11px]">
+            <div className="px-3 pt-4 space-y-2 text-sm">
               <div
                 className="h-8 px-2 grid place-items-center rounded tp-item"
                 style={{ background: t.buttonBg, color: t.buttonText }}
@@ -150,7 +150,7 @@ export default function ThemePreview({
             className="flex flex-col overflow-hidden "
             style={{ width: "16%" }}
           >
-            <div className="px-3 pt-4 space-y-2 text-[11px]">
+            <div className="px-3 pt-4 space-y-2 text-sm">
               <div
                 className="h-8 px-2 grid place-items-center rounded tp-item"
                 style={{ background: t.buttonBg, color: t.buttonText }}
@@ -158,12 +158,12 @@ export default function ThemePreview({
                 Contact Us
               </div>
             </div>
-            <div className="px-4 py-3 space-y-3 text-[11px] leading-5">
+            <div className="px-4 py-3 space-y-3 text-sm leading-5">
               <div>
                 <div className="uppercase tracking-wide opacity-60 text-[10px]">
                   Hub
                 </div>
-                <div className="font-bold text-lg">{nameHub}</div>
+                <div className="font-bold text-md">{nameHub}</div>
               </div>
               <div>
                 <div className="uppercase tracking-wide opacity-60 text-[10px]">

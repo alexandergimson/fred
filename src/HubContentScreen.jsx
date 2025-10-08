@@ -16,6 +16,7 @@ import {
   getDoc,
   writeBatch,
 } from "firebase/firestore";
+import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
 
 function ActionButton({ children, title, onClick, confirm, label, danger }) {
   const handleClick = (e) => {
@@ -28,12 +29,14 @@ function ActionButton({ children, title, onClick, confirm, label, danger }) {
   return (
     <button
       type="button"
-      onClick={handleClick}
       title={title}
       aria-expanded={expanded}
+      onClick={handleClick}
       className={
         expanded
-          ? "UserIconBtn UserDanger w-28 px-4 shadow-md hover:shadow-lg"
+          ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
+          : danger
+          ? "UserIconBtnDanger"
           : "UserIconBtn"
       }
     >
@@ -189,108 +192,106 @@ export default function HubContentScreen() {
             action={{
               label: "Add content",
               to: `/admin/hubs/${hubId}/content/new`,
-              icon: <AddContent className="w-5 h-5" />,
+              icon: <AddContent />,
             }}
           />
 
-          <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">
-            <div className="rounded-lg border border-gray-400 overflow-hidden">
-              <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
-                <colgroup>
-                  <col className="w-[44px]" /> {/* Drag handle */}
-                  <col /> {/* Name (flex) */}
-                  <col className="w-[140px]" /> {/* Type */}
-                  <col className="w-[140px]" /> {/* Created */}
-                  <col className="w-[320px]" /> {/* Actions (fixed) */}
-                </colgroup>
+          <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
+            <div className="rounded-lg rounded-b-none overflow-hidden">
+              <TableShell>
+                <Table>
+                  <colgroup>
+                    <col className="w-[44px]" /> {/* Drag handle */}
+                    <col /> {/* Name (flex) */}
+                    <col className="w-[140px]" /> {/* Type */}
+                    <col className="w-[140px]" /> {/* Created */}
+                    <col className="w-[320px]" /> {/* Actions (fixed) */}
+                  </colgroup>
 
-                <thead className="sticky top-0 bg-background text-sm">
-                  <tr>
-                    <th className="text-left px-6 py-4 w-10"></th>
-                    <th className="text-left px-6 py-4">Name</th>
-                    <th className="text-left px-6 py-4">Type</th>
-                    <th className="text-left px-6 py-4">Created</th>
-                    <th className="text-right px-6 py-4"></th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rows.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="bg-white border-b border-gray-400"
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, r.id)}
-                      onDragOver={(e) => handleDragOver(e, r.id)}
-                      onDrop={handleDrop}
-                    >
-                      {/* Drag handle */}
-                      <td
-                        className="px-6 py-4 cursor-move select-none text-gray-400"
-                        title="Drag to reorder"
-                      >
-                        <span className="text-lg leading-none">☰</span>
-                      </td>
-
-                      <td className="px-6 py-4">{r.name || "Untitled"}</td>
-
-                      <td className="px-6 py-4">{r.kind || "—"}</td>
-
-                      <td className="px-6 py-4 text-gray-500">
-                        {r.createdAt?.toDate
-                          ? r.createdAt.toDate().toLocaleDateString()
-                          : "…"}
-                      </td>
-
-                      <td className="px-6 py-4 w-[320px]">
-                        <div className="flex items-center justify-end gap-2 flex-nowrap">
-                          <ActionButton
-                            title="Preview"
-                            onClick={() => onPreview(r.id)}
-                          >
-                            <PreviewIcon className="w-5 h-5" />
-                          </ActionButton>
-
-                          <ActionButton
-                            title="Edit"
-                            onClick={() => onEdit(r.id)}
-                          >
-                            <EditIcon className="w-5 h-5" />
-                          </ActionButton>
-
-                          {confirmDeleteId === r.id ? (
-                            <ActionButton
-                              title="Confirm delete"
-                              danger
-                              confirm
-                              label="Confirm?"
-                              onClick={() => handleDelete(r.id)}
-                            />
-                          ) : (
-                            <ActionButton
-                              title="Delete"
-                              onClick={() => setConfirmDeleteId(r.id)}
-                            >
-                              <DeleteIcon className="w-5 h-5" />
-                            </ActionButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {rows.length === 0 && (
+                  <Thead>
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="px-6 py-10 text-center text-gray-500"
-                      >
-                        No content yet — add your first item.
-                      </td>
+                      <Th className="w-10"></Th>
+                      <Th>Name</Th>
+                      <Th>Type</Th>
+                      <Th>Created</Th>
+                      <Th className="text-right"></Th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </Thead>
+
+                  <tbody>
+                    {rows.map((r) => (
+                      <Tr
+                        key={r.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, r.id)}
+                        onDragOver={(e) => handleDragOver(e, r.id)}
+                        onDrop={handleDrop}
+                      >
+                        {/* Drag handle */}
+                        <Td className="cursor-move select-none text-gray-400">
+                          <span className="text-lg leading-none">☰</span>
+                        </Td>
+
+                        <Td>{r.name || "Untitled"}</Td>
+                        <Td>{r.kind || "—"}</Td>
+
+                        <Td className="text-gray-500">
+                          {r.createdAt?.toDate
+                            ? r.createdAt.toDate().toLocaleDateString()
+                            : "…"}
+                        </Td>
+
+                        <Td className="w-[320px]">
+                          <div className="flex items-center justify-end gap-2 flex-nowrap">
+                            <ActionButton
+                              title="Preview"
+                              onClick={() => onPreview(r.id)}
+                            >
+                              <PreviewIcon className="w-4 h-4" />
+                            </ActionButton>
+
+                            <ActionButton
+                              title="Edit"
+                              onClick={() => onEdit(r.id)}
+                            >
+                              <EditIcon className="w-4 h-4" />
+                            </ActionButton>
+
+                            {confirmDeleteId === r.id ? (
+                              <ActionButton
+                                title="Confirm delete"
+                                danger
+                                confirm
+                                label="Confirm?"
+                                onClick={() => handleDelete(r.id)}
+                              />
+                            ) : (
+                              <ActionButton
+                                title="Delete"
+                                danger
+                                onClick={() => setConfirmDeleteId(r.id)}
+                              >
+                                <DeleteIcon className="w-4 h-4" />
+                              </ActionButton>
+                            )}
+                          </div>
+                        </Td>
+                      </Tr>
+                    ))}
+
+                    {rows.length === 0 && (
+                      <Tr>
+                        <Td
+                          colSpan={5}
+                          className="text-center text-gray-500 py-10"
+                        >
+                          No content yet — add your first item.
+                        </Td>
+                      </Tr>
+                    )}
+                  </tbody>
+                </Table>
+              </TableShell>
             </div>
             {/* Auto-saves on drop */}
           </div>

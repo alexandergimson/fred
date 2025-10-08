@@ -260,7 +260,7 @@ export default function CreateContentScreen() {
             }}
           />
 
-          <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">
+          <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
               <Field label="Name">
                 <input

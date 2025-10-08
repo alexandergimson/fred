@@ -182,7 +182,7 @@ export default function EditHubScreen() {
             }}
           />
 
-          <div className="flex-1 overflow-auto px-6 pb-4">
+          <div className="flex-1 overflow-auto ml-8 mr-8  pb-4">
             <div className="space-y-10 max-w-screen-2xl mx-auto">
               {/* Prospect Theme + Preview */}
               <section>

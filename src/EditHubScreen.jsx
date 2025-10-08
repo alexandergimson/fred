@@ -4,12 +4,8 @@ import HubScreenHeader from "./HubScreenHeader";
 import { db, storage, auth } from "./lib/firebase";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import ThemePreview from "./ThemePreview";
-import SaveIcon from "./icons/SaveIcon";
 
-/* theme pieces */
-import ColorInput from "./theme/ColorInput";
-import BgField from "./theme/BgField";
+import SaveIcon from "./icons/SaveIcon";
 import { defaultProspectTheme, migrateTheme } from "./theme/defaults";
 
 /* small UI */
@@ -203,7 +199,7 @@ export default function EditHubScreen() {
             }}
           />
 
-          <div className="flex-1 overflow-auto px-6 pb-4">
+          <div className="flex-1 overflow-auto ml-8 mr-8 pb-4">
             <div className="space-y-10 max-w-screen-2xl mx-auto">
               {/* Top row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

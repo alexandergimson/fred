@@ -6,8 +6,7 @@ import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import HubScreenHeader from "./HubScreenHeader";
 import HubsIcon from "./icons/HubsIcon";
 import PreviewIcon from "./icons/PreviewIcon";
-
-import { style } from "framer-motion/client";
+import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
 
 function ActionButton({ children, title, onClick, confirm, label, danger }) {
   const handleClick = (e) => {
@@ -81,7 +80,7 @@ export default function AnalyticsScreen() {
   return (
     <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
       <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+        <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col">
           <HubScreenHeader
             title="Analytics"
             action={{
@@ -90,87 +89,91 @@ export default function AnalyticsScreen() {
               icon: <HubsIcon className="w-5 h-5" />,
             }}
           />
-          <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">
-            <div className="rounded-lg border border-gray-400 overflow-hidden">
-              <table className="w-full text-base border-spacing-0 table-auto">
-                <colgroup>
-                  <col className="w-[45%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[20%]" />
-                </colgroup>
-                <thead className="sticky top-0 bg-background text-gray-600">
-                  <tr>
-                    <th className="text-left px-4 py-4 text-base">Hub name</th>
-                    <th className="text-left px-4 py-4 text-base">Logo</th>
-                    <th className="text-left px-4 py-4 text-base">
-                      Avg. engagement time
-                    </th>
-                    <th className="text-left px-4 py-4 text-base"></th>
-                  </tr>
-                </thead>
+          <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
+            <div className="rounded-lg rounded-b-none overflow-hidden">
+              <TableShell>
+                <Table className="table-auto">
+                  <colgroup>
+                    <col className="w-[45%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[20%]" />
+                  </colgroup>
 
-                <tbody>
-                  {rows.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="bg-white border-b border-gray-400 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => goToHubAnalytics(r.id)} // ⬅️ add
-                      onKeyDown={(e) =>
-                        (e.key === "Enter" || e.key === " ") &&
-                        goToHubAnalytics(r.id)
-                      }
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <td
-                        className="px-4 py-4 text-base truncate"
-                        title={r.name}
-                      >
-                        {r.name}
-                      </td>
-                      <td className="px-4 py-4 hidden md:table-cell">
-                        {r.logoUrl ? (
-                          <img
-                            src={r.logoUrl}
-                            alt=""
-                            className="h-5 object-contain"
-                          />
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-
-                      <td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
-                        {formatDuration(r.metrics?.avgEngagementSec)}
-                      </td>
-                      <td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
-                        <div className="flex items-center justify-end gap-2 flex-nowrap">
-                          <ActionButton
-                            title="Preview"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPreview(r.id);
-                            }}
-                          >
-                            <PreviewIcon className="w-5 h-5" />
-                          </ActionButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {rows.length === 0 && (
+                  <Thead className="text-gray-600">
                     <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-10 text-center text-gray-500"
-                      >
-                        No hubs yet — usage data will appear here.
-                      </td>
+                      <Th className="px-4 py-4">Hub name</Th>
+                      <Th className="px-4 py-4">Logo</Th>
+                      <Th className="px-4 py-4">Avg. engagement time</Th>
+                      <Th className="px-4 py-4"></Th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </Thead>
+
+                  <tbody>
+                    {rows.map((r) => (
+                      <Tr
+                        key={r.id}
+                        className="cursor-pointer"
+                        onClick={() => goToHubAnalytics(r.id)}
+                        onKeyDown={(e) =>
+                          (e.key === "Enter" || e.key === " ") &&
+                          goToHubAnalytics(r.id)
+                        }
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <Td
+                          className="px-4 py-4 text-sm truncate"
+                          title={r.name}
+                        >
+                          {r.name}
+                        </Td>
+
+                        <Td className="px-4 py-4 hidden md:table-cell">
+                          {r.logoUrl ? (
+                            <img
+                              src={r.logoUrl}
+                              alt=""
+                              className="h-5 object-contain"
+                            />
+                          ) : (
+                            "—"
+                          )}
+                        </Td>
+
+                        <Td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
+                          {formatDuration(r.metrics?.avgEngagementSec)}
+                        </Td>
+
+                        <Td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
+                          <div className="flex items-center justify-end gap-2 flex-nowrap">
+                            <ActionButton
+                              title="Preview"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPreview(r.id);
+                              }}
+                            >
+                              <PreviewIcon className="w-4 h-4" />
+                            </ActionButton>
+                          </div>
+                        </Td>
+                      </Tr>
+                    ))}
+
+                    {rows.length === 0 && (
+                      <Tr>
+                        <Td
+                          colSpan={4}
+                          className="px-6 py-10 text-center text-gray-500"
+                        >
+                          No hubs yet — usage data will appear here.
+                        </Td>
+                      </Tr>
+                    )}
+                  </tbody>
+                </Table>
+              </TableShell>
             </div>
           </div>
           {/* /Table */}
