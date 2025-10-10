@@ -227,7 +227,7 @@ export default function CreateHubScreen() {
     form.logo && typeof form.logo === "object" ? form.logo.file : null;
 
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
+    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader

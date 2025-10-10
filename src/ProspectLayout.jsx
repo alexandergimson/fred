@@ -129,7 +129,7 @@ export default function ProspectLayout() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex h-screen overflow-hidden page-fade-in"
       style={{ ...cssVars, background: "var(--pv-sidebar-bg)" }}
     >
       {/* LEFT: list */}

@@ -174,10 +174,8 @@ export default function HubAnalyticsScreen() {
     };
   }, [analyticsById]);
 
-  if (loadingHub) return <div className="p-6">Loading…</div>;
-
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
+    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
@@ -222,21 +220,13 @@ export default function HubAnalyticsScreen() {
                 <div className="overflow-x-auto">
                   <TableShell>
                     <Table>
-                      <colgroup>
-                        <col className="w-[44%]" />
-                        <col className="w-[14%]" />
-                        <col className="w-[12%]" />
-                        <col className="w-[14%]" />
-                        <col className="w-[16%]" />
-                      </colgroup>
-
                       <Thead>
                         <tr>
                           <Th>Content</Th>
                           <Th>Type</Th>
                           <Th>Views</Th>
                           <Th>Completion</Th>
-                          <Th className="0 text-right">Last viewed</Th>
+                          <Th className="text-right">Last viewed</Th>
                         </tr>
                       </Thead>
 

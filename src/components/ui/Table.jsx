@@ -1,23 +1,29 @@
+// components/ui/Table.jsx
 export function TableShell({ children, className = "" }) {
   return (
-    <div className={`rounded-t-lg rounded-b-none overflow-hidden ${className}`}>
-      {children}
+    <div className={`relative overflow-x-auto ${className}`}>
+      {/* Horizontal scroll on small screens */}
+      <div className="w-full overflow-x-auto">{children}</div>
     </div>
   );
 }
 
 export function Table({ children, className = "", ...props }) {
   return (
-    <table className={`w-full text-sm table-fixed ${className}`} {...props}>
+    <table
+      className={`w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400" ${className}`}
+      {...props}
+    >
       {children}
     </table>
   );
 }
 
 export function Thead({ children, className = "", ...props }) {
+  // z-20 keeps header above row content (logos, buttons, etc.)
   return (
     <thead
-      className={`sticky top-0 bg-background text-sm text-gray-900 ${className}`}
+      className={`text-sm bg-background  text-gray-900 ${className}`}
       {...props}
     >
       {children}
@@ -26,8 +32,13 @@ export function Thead({ children, className = "", ...props }) {
 }
 
 export function Th({ children, className = "", ...props }) {
+  // Baseline padding; can be overridden per usage with className
   return (
-    <th className={`text-left px-6 py-4 font-normal ${className}`} {...props}>
+    <th
+      scope="col"
+      className={`text-sm text-left font-normal px-6 py-3 ${className}`}
+      {...props}
+    >
       {children}
     </th>
   );

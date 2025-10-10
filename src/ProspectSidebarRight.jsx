@@ -7,10 +7,9 @@ export default function ProspectMetaSidebar({
 }) {
   return (
     <aside
-      className="h-screen flex flex-col overflow-hidden shrink-0"
+      className="h-screen flex flex-col overflow-hidden shrink-0 page-fade-in"
       style={{
-        width: "16vw",
-        minWidth: "200px",
+        width: "clamp(220px, 16vw, 320px)",
         background: "transparent",
         color: "var(--pv-sidebar-text)",
         ...(style || {}),
@@ -25,10 +24,22 @@ export default function ProspectMetaSidebar({
             href={contactHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-10 inline-flex items-center justify-center rounded-lg text-sm no-underline cursor-pointer transition-opacity hover:opacity-90"
+            className="w-full max-w-[280px] h-10 inline-flex items-center justify-center rounded-lg text-sm no-underline cursor-pointer transition-colors"
             style={{
               background: "var(--pv-btn-bg)",
               color: "var(--pv-btn-text)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--pv-btn-bg)";
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = "var(--pv-btn-bg)";
             }}
           >
             Contact us

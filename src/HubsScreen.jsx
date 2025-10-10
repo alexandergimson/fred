@@ -1,7 +1,6 @@
 // HubsScreen.jsx
 import HubScreenHeader from "./HubScreenHeader";
 import AddContent from "./icons/AddContent";
-import EditIcon from "./icons/EditIcon";
 import PreviewIcon from "./icons/PreviewIcon";
 import DeleteIcon from "./icons/DeleteIcon";
 import HubDesignIcon from "./icons/HubDesignIcon";
@@ -19,12 +18,26 @@ import {
 import { useNavigate } from "react-router-dom";
 import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
 
-function ActionButton({ children, title, onClick, confirm, label, danger }) {
+function ActionButton({
+  children,
+  title,
+  onClick,
+  confirm,
+  label,
+  danger,
+  className = "",
+}) {
   const handleClick = (e) => {
     e.stopPropagation();
     onClick?.(e);
   };
   const expanded = Boolean(confirm && danger);
+
+  const base = expanded
+    ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
+    : danger
+    ? "UserIconBtnDanger"
+    : "UserIconBtn";
 
   return (
     <button
@@ -32,13 +45,7 @@ function ActionButton({ children, title, onClick, confirm, label, danger }) {
       title={title}
       aria-expanded={expanded}
       onClick={handleClick}
-      className={
-        expanded
-          ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
-          : danger
-          ? "UserIconBtnDanger"
-          : "UserIconBtn"
-      }
+      className={`${base} ${className}`}
     >
       {expanded ? label ?? "Confirm?" : children}
     </button>
@@ -79,18 +86,11 @@ export default function HubsScreen() {
     };
   }, [confirmDeleteId]);
 
-  function onOpen(id) {
-    navigate(`/admin/hubs/${id}/content`);
-  }
-  function onPreview(id) {
+  const onOpen = (id) => navigate(`/admin/hubs/${id}/content`);
+  const onPreview = (id) =>
     window.open(`/prospect/${id}`, "_blank", "noopener,noreferrer");
-  }
-  function onDesign(id) {
-    navigate(`/admin/hubs/${id}/design`);
-  }
-  function onEdit(id) {
-    navigate(`/admin/hubs/${id}/edit`);
-  }
+  const onDesign = (id) => navigate(`/admin/hubs/${id}/design`);
+  const onEdit = (id) => navigate(`/admin/hubs/${id}/edit`);
 
   async function handleDelete(id) {
     try {
@@ -103,9 +103,9 @@ export default function HubsScreen() {
   }
 
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
+    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl  overflow-hidden flex flex-col">
+        <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col">
           <HubScreenHeader
             title="Hubs"
             action={{
@@ -118,27 +118,14 @@ export default function HubsScreen() {
           <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
             <div className="rounded-lg rounded-b-none overflow-hidden">
               <TableShell>
-                <Table className="table-auto">
-                  <colgroup>
-                    <col className="w-[60%] sm:w-[20%] md:w-[45%] lg:w-[20%]" />
-                    <col className="w-[120px]" />
-                    <col className="w-[180px]" />
-                    <col className="w-[120px]" /> {/* Created */}
-                    <col className="w-[220px] sm:w-[260px] md:w-[320px]" />{" "}
-                    {/* Actions */}
-                  </colgroup>
-
+                <Table>
                   <Thead className="text-gray-600">
                     <tr>
-                      <Th className="px-4 py-4 text-sm">Name</Th>
-                      <Th className="px-4 py-4 text-sm hidden md:table-cell">
-                        Logo
-                      </Th>
-                      <Th className="px-4 py-4 text-sm hidden sm:table-cell">
-                        Industry
-                      </Th>
-                      <Th className="px-4 py-4 text-sm">Created</Th>
-                      <Th className="px-4 py-4 text-sm text-right"></Th>
+                      <Th>Hub Name</Th>
+                      <Th>Logo</Th>
+                      <Th>Industry</Th>
+                      <Th>Created</Th>
+                      <Th className="text-right"></Th>
                     </tr>
                   </Thead>
 
@@ -154,26 +141,27 @@ export default function HubsScreen() {
                         role="button"
                         tabIndex={0}
                       >
-                        <Td className="px-4 py-4 text-sm">
+                        <Td>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpen(r.id);
                             }}
-                            className="block max-w-[180px] sm:max-w-none truncate text-left"
                             title={r.name}
                           >
                             {r.name}
                           </button>
                         </Td>
 
-                        <Td className="px-4 py-4 hidden md:table-cell">
+                        <Td>
                           {r.logoUrl ? (
-                            <img
-                              src={r.logoUrl}
-                              alt=""
-                              className="h-5 object-contain"
-                            />
+                            <div className="h-5 w-[88px] overflow-hidden">
+                              <img
+                                src={r.logoUrl}
+                                alt=""
+                                className="h-full w-auto object-contain block"
+                              />
+                            </div>
                           ) : (
                             "—"
                           )}
@@ -183,14 +171,14 @@ export default function HubsScreen() {
                           {r.industry || "—"}
                         </Td>
 
-                        <Td className="px-4 py-4 text-sm">
+                        <Td className="text-sm hidden sm:table-cell min-w-[160px] truncate">
                           {r.createdAt?.toDate
                             ? r.createdAt.toDate().toLocaleDateString()
                             : "…"}
                         </Td>
 
-                        <Td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
-                          <div className="flex items-center justify-end gap-2 flex-nowrap">
+                        <Td>
+                          <div className="flex justify-end gap-2">
                             <ActionButton
                               title="Edit details"
                               onClick={(e) => {
@@ -243,7 +231,10 @@ export default function HubsScreen() {
                               <ActionButton
                                 title="Delete"
                                 danger
-                                onClick={() => setConfirmDeleteId(r.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteId(r.id);
+                                }}
                               >
                                 <DeleteIcon className="w-4 h-4" />
                               </ActionButton>
@@ -268,9 +259,7 @@ export default function HubsScreen() {
               </TableShell>
             </div>
           </div>
-          {/* /Table */}
         </div>
-        {/* /Card */}
       </div>
     </main>
   );

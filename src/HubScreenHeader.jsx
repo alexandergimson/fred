@@ -4,8 +4,8 @@ import PreviewIcon from "./icons/PreviewIcon";
 
 export default function HubScreenHeader({
   title,
-  action, // { label, to?, onClick?, icon?, disabled? }
-  secondaryAction, // { label?, href }  <-- NEW
+  action,
+  secondaryAction,
   className = "",
 }) {
   const baseBtn = "UserPrimaryCta";
@@ -22,27 +22,27 @@ export default function HubScreenHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Secondary action: Preview */}
         {secondaryAction?.href && (
           <a
             href={secondaryAction.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${secondaryBtn} shrink-0 w-auto px-3`}
+            className={`${secondaryBtn} shrink-0`}
             title={secondaryAction.label || "Preview"}
           >
             <PreviewIcon className="w-5 h-5" />
-            <span>{secondaryAction.label || "Preview"}</span>
+            <span className="hidden lg:inline">
+              {secondaryAction.label || "Preview"}
+            </span>
           </a>
         )}
 
-        {/* Primary action (unchanged) */}
         {action ? (
           action.to ? (
             <Link to={action.to} className="shrink-0">
               <button className={baseBtn} disabled={action.disabled}>
                 {action.icon ? action.icon : null}
-                {action.label}
+                <span className="hidden lg:inline">{action.label}</span>
               </button>
             </Link>
           ) : (
@@ -53,11 +53,11 @@ export default function HubScreenHeader({
               className={baseBtn + " shrink-0"}
             >
               {action.icon ? action.icon : null}
-              {action.label}
+              <span className="hidden lg:inline">{action.label}</span>
             </button>
           )
         ) : (
-          <div /> // keeps spacing if no action
+          <div />
         )}
       </div>
     </header>

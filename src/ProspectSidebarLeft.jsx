@@ -66,9 +66,9 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
 
   return (
     <aside
-      className="h-screen flex flex-col overflow-hidden shrink-0"
+      className="h-screen flex flex-col overflow-hidden shrink-0 page-fade-in"
       style={{
-        width: "16vw",
+        width: "10vw",
         minWidth: "200px",
         background: "transparent",
         color: "var(--pv-sidebar-text)",
@@ -109,7 +109,7 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
                 key={item.id}
                 onClick={() => onSelect(item.id)}
                 title={label}
-                className="w-full h-10 my-1 flex items-center px-2 rounded-lg text-sm transition-colors cursor-pointer relative"
+                className="w-full max-w-[280px] h-10 my-1 flex items-center px-2 rounded-lg text-sm transition-colors cursor-pointer relative"
                 style={{
                   background: isActive ? "var(--pv-btn-bg)" : "transparent",
                   color: isActive

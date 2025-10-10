@@ -78,7 +78,7 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col">
+    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col">
           <HubScreenHeader
@@ -92,20 +92,13 @@ export default function AnalyticsScreen() {
           <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
             <div className="rounded-lg rounded-b-none overflow-hidden">
               <TableShell>
-                <Table className="table-auto">
-                  <colgroup>
-                    <col className="w-[45%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[20%]" />
-                    <col className="w-[20%]" />
-                  </colgroup>
-
+                <Table>
                   <Thead className="text-gray-600">
                     <tr>
-                      <Th className="px-4 py-4">Hub name</Th>
-                      <Th className="px-4 py-4">Logo</Th>
-                      <Th className="px-4 py-4">Avg. engagement time</Th>
-                      <Th className="px-4 py-4"></Th>
+                      <Th>Hub Name</Th>
+                      <Th>Logo</Th>
+                      <Th>Avg. engagement time</Th>
+                      <Th></Th>
                     </tr>
                   </Thead>
 
@@ -122,26 +115,23 @@ export default function AnalyticsScreen() {
                         role="button"
                         tabIndex={0}
                       >
-                        <Td
-                          className="px-4 py-4 text-sm truncate"
-                          title={r.name}
-                        >
-                          {r.name}
-                        </Td>
+                        <Td title={r.name}>{r.name}</Td>
 
-                        <Td className="px-4 py-4 hidden md:table-cell">
+                        <Td>
                           {r.logoUrl ? (
-                            <img
-                              src={r.logoUrl}
-                              alt=""
-                              className="h-5 object-contain"
-                            />
+                            <div className="h-5 w-[88px] overflow-hidden">
+                              <img
+                                src={r.logoUrl}
+                                alt=""
+                                className="h-full w-auto object-contain block"
+                              />
+                            </div>
                           ) : (
                             "—"
                           )}
                         </Td>
 
-                        <Td className="px-4 py-4 w-[220px] sm:w-[260px] md:w-[320px]">
+                        <Td className="px-4 py-4 text-sm hidden sm:table-cell">
                           {formatDuration(r.metrics?.avgEngagementSec)}
                         </Td>
 
