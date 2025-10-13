@@ -22,6 +22,80 @@ function XIcon(props) {
   );
 }
 
+function ImageUploadInline({ value, onChange }) {
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  const pick = () => inputRef.current?.click();
+  const take = (files) => {
+    const file = files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    onChange({ file, url });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          take(e.dataTransfer.files);
+        }}
+        onClick={pick}
+        className={`border-2 rounded-lg px-4 py-6 text-center cursor-pointer transition
+          ${
+            dragging
+              ? "border-blue-600 bg-blue-50"
+              : "border-dashed border-gray-300 hover:border-gray-400"
+          }`}
+      >
+        <div className="text-sm text-gray-800">
+          Drag an image here or{" "}
+          <span className="underline text-blue-600">click to upload</span>
+        </div>
+        <div className="text-xs text-gray-500 mt-1">
+          PNG, JPG, SVG, WebP • up to ~8MB
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => take(e.target.files)}
+        />
+      </div>
+
+      {value && (
+        <div className="flex items-start gap-3">
+          <img
+            src={typeof value === "string" ? value : value.url}
+            alt="Background preview"
+            className="w-24 h-16 object-cover rounded border"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="text-xs border rounded px-2 py-1 border-gray-200 hover:border-red-300 text-red-600"
+          >
+            Remove
+          </button>
+        </div>
+      )}
+
+      <div className="text-[11px] text-gray-500">
+        Images are displayed as <strong>cover</strong> and{" "}
+        <strong>center</strong> by default.
+      </div>
+    </div>
+  );
+}
+
 export default function BgPopover({
   anchorRef,
   open,
@@ -32,6 +106,8 @@ export default function BgPopover({
   onSolid,
   gradient,
   onGradient,
+  image, // NEW
+  onImage, // NEW
 }) {
   const panelRef = useRef(null);
   const [pos, setPos] = useState({ top: 120, left: 120 });
@@ -40,7 +116,6 @@ export default function BgPopover({
     if (!open) return;
     const M = 8;
     const W = 420;
-
     const place = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -102,6 +177,7 @@ export default function BgPopover({
             options={[
               { value: "solid", label: "Solid colour" },
               { value: "gradient", label: "Gradient" },
+              { value: "image", label: "Image" }, // NEW
             ]}
           />
           <button
@@ -119,8 +195,11 @@ export default function BgPopover({
           <div className="space-y-2">
             <ColorInput value={solid} onChange={onSolid} />
           </div>
-        ) : (
+        ) : mode === "gradient" ? (
           <GradientPicker value={gradient} onChange={onGradient} />
+        ) : (
+          // IMAGE MODE: upload directly inside the popover
+          <ImageUploadInline value={image} onChange={onImage} />
         )}
       </div>
     </div>

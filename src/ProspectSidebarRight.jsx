@@ -24,23 +24,7 @@ export default function ProspectMetaSidebar({
             href={contactHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full max-w-[280px] h-10 inline-flex items-center justify-center rounded-lg text-sm no-underline cursor-pointer transition-colors"
-            style={{
-              background: "var(--pv-btn-bg)",
-              color: "var(--pv-btn-text)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--pv-btn-bg)";
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.background = "var(--pv-btn-bg)";
-            }}
+            className="btn-brand w-full max-w-[280px] h-10 text-sm"
           >
             Contact us
           </a>

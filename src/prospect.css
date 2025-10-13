@@ -1,0 +1,158 @@
+/* prospect.css — unified button system with subtle 3D look */
+
+/* Theme variables (set --brand, --brand-hover, --btn-text from JS) */
+:root {
+  /* User/theme-provided colours */
+  --brand: #1f50af;
+  --brand-hover: var(--brand);
+  --btn-text: #ffffff;
+
+  /* Sidebar text fallback */
+  --pv-sidebar-text: #374151;
+
+  /* Shared sizing/look */
+  --btn-height: 2.5rem;
+  --btn-radius: 0.5rem;
+  --btn-padding-x: 0.75rem;
+  --btn-font-size: 0.875rem;
+  --btn-weight: 500;
+
+  /* Sheen/shade overlay levels */
+  --sheen: 0.18;
+  --shade: 0.1;
+  --sheen-hover: 0.22;
+  --shade-hover: 0.12;
+  --sheen-active: 0.12;
+  --shade-active: 0.16;
+
+  /* Neutral border colour */
+  --btn-border: rgba(0, 0, 0, 0.22);
+
+  /* Missing before: subtle elevation tokens */
+  --btn-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --btn-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --btn-shadow-active: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+/* -------------------------------------------------------
+   CTA button (right sidebar)
+------------------------------------------------------- */
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
+  border: 1px solid var(--btn-border);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-weight);
+  color: var(--btn-text);
+  background-color: var(--brand);
+  box-shadow: var(--btn-shadow);
+  cursor: pointer;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease, background-image 0.15s ease, color 0.15s ease;
+
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, var(--sheen)),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, var(--shade)));
+}
+
+.btn-brand:hover {
+  background-color: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--btn-shadow-hover);
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, var(--sheen-hover)),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, var(--shade-hover))
+    );
+}
+
+.btn-brand:active {
+  background-color: var(--brand-hover);
+  transform: translateY(0);
+  box-shadow: var(--btn-shadow-active);
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, var(--sheen-active)),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, var(--shade-active))
+    );
+}
+
+/* -------------------------------------------------------
+   Left sidebar items — same height + 3D logic
+------------------------------------------------------- */
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
+  border: 1px solid transparent;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-weight);
+  color: var(--pv-sidebar-text);
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease, background-image 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.nav-item:hover {
+  color: var(--btn-text);
+  border-color: var(--btn-border);
+  background-color: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--btn-shadow-hover);
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, var(--sheen-hover)),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, var(--shade-hover))
+    );
+}
+
+.nav-item--active {
+  color: var(--btn-text);
+  border-color: var(--btn-border);
+  background-color: var(--brand);
+  box-shadow: var(--btn-shadow);
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, var(--sheen)),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, var(--shade)));
+}
+
+.nav-item--active:active {
+  box-shadow: var(--btn-shadow-active);
+  transform: translateY(0);
+}

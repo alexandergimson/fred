@@ -1,8 +1,11 @@
-// ThemePreview.jsx — unified background like Prospect view
-import React from "react";
+// ThemePreview.jsx — unified background like Prospect view (CSS-driven buttons/nav)
 
 const FALLBACK_THEME = {
   sidebarBgMode: "solid",
+  sidebarBgImage: null,
+  sidebarBgImageFit: "cover",
+  sidebarBgImagePosition: "center",
+
   sidebarBg: "#F7F8FC",
   sidebarGradient: {
     angle: 135,
@@ -37,17 +40,71 @@ const FALLBACK_THEME = {
   },
 };
 
+const clamp01 = (n) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
+const hexToRgb = (hex = "#000000") => {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2) || "00", 16);
+  const g = parseInt(h.slice(2, 4) || "00", 16);
+  const b = parseInt(h.slice(4, 6) || "00", 16);
+  return { r, g, b };
+};
+const withAlpha = (hex, alphaPct) => {
+  const a = clamp01(alphaPct ?? 100) / 100;
+  if (a >= 0.999) return hex || "#000000";
+  const { r, g, b } = hexToRgb(hex || "#000000");
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
+};
+
 const cssGradient = (g) => {
-  if (!g || !Array.isArray(g.stops) || g.stops.length < 2) return null;
+  if (!g || !Array.isArray(g.stops) || g.stops.length === 0) return null;
+
+  let stops = g.stops
+    .filter((s) => s && s.color)
+    .map((s, i) => ({
+      color: s.color,
+      alpha: clamp01(s.alpha ?? 100),
+      at:
+        s.at == null
+          ? g.stops.length === 1
+            ? i
+              ? 100
+              : 0
+            : Math.round((i / (g.stops.length - 1)) * 100)
+          : clamp01(s.at),
+    }))
+    .sort((a, b) => a.at - b.at);
+
+  if (stops.length === 1) {
+    const s = stops[0];
+    stops = [
+      { ...s, at: 0 },
+      { ...s, at: 100 },
+    ];
+  }
+
+  if (stops[0].at > 0) stops.unshift({ ...stops[0], at: 0 });
+  if (stops[stops.length - 1].at < 100)
+    stops.push({ ...stops[stops.length - 1], at: 100 });
+
   const angle = typeof g.angle === "number" ? `${g.angle}deg` : "135deg";
-  const parts = g.stops.map(
-    (s) => `${s.color}${typeof s.at === "number" ? ` ${s.at}%` : ""}`
-  );
+  const parts = stops.map((s) => `${withAlpha(s.color, s.alpha)} ${s.at}%`);
   return `linear-gradient(${angle}, ${parts.join(", ")})`;
 };
 
-const bgVal = (mode, solid, gradient) =>
-  mode === "gradient" ? cssGradient(gradient) || solid : solid;
+const bgVal = (
+  mode,
+  solid,
+  gradient,
+  image,
+  fit = "cover",
+  position = "center"
+) => {
+  if (mode === "image" && image) {
+    const url = typeof image === "string" ? image : image.url;
+    return `url("${url}") ${position} / ${fit} no-repeat`;
+  }
+  return mode === "gradient" ? cssGradient(gradient) || solid : solid;
+};
 
 function getContrastColor(hex) {
   if (!hex || typeof hex !== "string") return "#fff";
@@ -71,38 +128,39 @@ export default function ThemePreview({
 }) {
   const t = { ...FALLBACK_THEME, ...(theme || {}) };
 
-  const sidebarBg = bgVal(t.sidebarBgMode, t.sidebarBg, t.sidebarGradient);
+  const sidebarBg = bgVal(
+    t.sidebarBgMode,
+    t.sidebarBg,
+    t.sidebarGradient,
+    t.sidebarBgImage,
+    t.sidebarBgImageFit,
+    t.sidebarBgImagePosition
+  );
 
   const nameHub = (hubName && hubName.trim()) || "Hub name";
   const nameContent = (contentName && contentName.trim()) || "Content name";
 
-  const itemHoverBg = t.buttonHoverColor || t.buttonBg;
-  const itemHoverText = getContrastColor(itemHoverBg);
+  // Set the same CSS variables Prospect view uses (prospect.css).
+  // Buttons/Nav take their look purely from CSS classes + these vars.
+  const previewVars = {
+    "--brand": t.buttonBg || "#1F50AF",
+    "--brand-hover": t.buttonHoverColor || t.buttonBg || "#1F50AF",
+    "--btn-text": t.buttonText || getContrastColor(t.buttonBg || "#1F50AF"),
+    "--pv-sidebar-text": t.sidebarText || "#374151",
+  };
 
   return (
     <div className={anchorClass}>
       {label && <div className="mb-2 text-[11px] text-gray-700">{label}</div>}
 
-      <style>{`
-        .tp-item {
-          transition: background-color .15s ease, color .15s ease;
-          cursor: pointer;
-        }
-        .tp-item:hover {
-          background: ${itemHoverBg} !important;
-          color: ${itemHoverText} !important;
-        }
-      `}</style>
-
       <div
         className={`shadow-lg border border-gray-200 rounded-md overflow-hidden ${className}`}
+        style={previewVars}
       >
-        {/* Single background wrapper */}
         <div
           className="flex h-full"
           style={{ background: sidebarBg, color: t.sidebarText }}
         >
-          {/* LEFT sidebar */}
           <aside
             className="flex flex-col overflow-hidden"
             style={{ width: "16%" }}
@@ -117,19 +175,22 @@ export default function ThemePreview({
                 <div className="text-[10px] opacity-70">Logo</div>
               )}
             </div>
+
             <div className="px-3 pt-4 space-y-2 text-sm">
-              <div
-                className="h-8 px-2 grid place-items-center rounded tp-item"
-                style={{ background: t.buttonBg, color: t.buttonText }}
-              >
+              {/* Selected item matches Prospect left-rail */}
+              <div className="h-8 px-2 grid place-items-center rounded font-medium nav-item nav-item--active">
                 Item A
               </div>
-              <div className="h-8 px-2 grid place-items-center rounded tp-item">
-                Item B
-              </div>
-              <div className="h-8 px-2 grid place-items-center rounded tp-item">
-                Item C
-              </div>
+
+              {/* Other items pick up hover from CSS (no JS) */}
+              {["Item B", "Item C"].map((label) => (
+                <div
+                  key={label}
+                  className="h-8 px-2 grid place-items-center rounded nav-item"
+                >
+                  {label}
+                </div>
+              ))}
             </div>
           </aside>
 
@@ -145,16 +206,13 @@ export default function ThemePreview({
             </div>
           </div>
 
-          {/* RIGHT sidebar */}
+          {/* RIGHT sidebar CTA uses the same button class */}
           <aside
-            className="flex flex-col overflow-hidden "
+            className="flex flex-col overflow-hidden"
             style={{ width: "16%" }}
           >
             <div className="px-3 pt-4 space-y-2 text-sm">
-              <div
-                className="h-8 px-2 grid place-items-center rounded tp-item"
-                style={{ background: t.buttonBg, color: t.buttonText }}
-              >
+              <div className="h-8 px-2 grid place-items-center rounded btn-brand w-full">
                 Contact Us
               </div>
             </div>

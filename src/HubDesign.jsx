@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
 import { db, storage, auth } from "./lib/firebase";
@@ -106,6 +106,7 @@ export default function EditHubScreen() {
     try {
       if (!auth.currentUser) return alert("Please sign in");
 
+      // ---- LOGO (existing) ----
       let logoUrl =
         form.logo && typeof form.logo === "string" ? form.logo : null;
 
@@ -125,10 +126,41 @@ export default function EditHubScreen() {
         if (p) logoUrl = await getDownloadURL(ref(storage, p));
       }
 
+      // ---- BACKGROUND IMAGE (NEW) ----
+      let bgImage = form.prospectTheme?.sidebarBgImage ?? null; // string | {file,url} | null
+
+      if (bgImage && typeof bgImage === "object" && bgImage.file) {
+        const ext = (bgImage.file.name.split(".").pop() || "png").toLowerCase();
+        const path = `hubs/${hubId}/theme/sidebar-bg.${ext}`;
+        const fileRef = ref(storage, path);
+        const metadata = { contentType: bgImage.file.type || "image/png" };
+        const task = uploadBytesResumable(fileRef, bgImage.file, metadata);
+        await new Promise((res, rej) =>
+          task.on("state_changed", null, rej, res)
+        );
+        bgImage = await getDownloadURL(fileRef);
+      }
+
+      if (
+        typeof bgImage === "string" &&
+        bgImage.includes("firebasestorage.app")
+      ) {
+        const p = extractPathFromUrl(bgImage);
+        if (p) bgImage = await getDownloadURL(ref(storage, p));
+      }
+
+      const nextTheme = structuredClone(form.prospectTheme);
+      nextTheme.sidebarBgImage = bgImage; // persist final URL or null
+
+      if (nextTheme.sidebarBgMode === "image" && nextTheme.sidebarBgImage) {
+        nextTheme.sidebarBgImageFit = "cover";
+        nextTheme.sidebarBgImagePosition = "center";
+      }
+
       const payload = {
         name: (form.name || "").trim(),
         contactLink: (form.contactLink || "").trim() || null,
-        prospectTheme: form.prospectTheme,
+        prospectTheme: nextTheme,
         ...(form.logo === null
           ? { logoUrl: null }
           : logoUrl
@@ -163,6 +195,11 @@ export default function EditHubScreen() {
       ? form.logo
       : null;
 
+  // image mode helpers
+  const mode = form.prospectTheme?.sidebarBgMode ?? "solid";
+  const imgFit = form.prospectTheme?.sidebarBgImageFit ?? "cover";
+  const imgPos = form.prospectTheme?.sidebarBgImagePosition ?? "center";
+
   return (
     <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
@@ -189,7 +226,7 @@ export default function EditHubScreen() {
                   <div>
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                       <BgField
-                        label="Background Colour"
+                        label="Background"
                         mode={form.prospectTheme.sidebarBgMode}
                         setMode={(v) =>
                           update("prospectTheme.sidebarBgMode", v)
@@ -200,8 +237,13 @@ export default function EditHubScreen() {
                         setGradient={(g) =>
                           update("prospectTheme.sidebarGradient", g)
                         }
+                        image={form.prospectTheme.sidebarBgImage}
+                        setImage={(img) =>
+                          update("prospectTheme.sidebarBgImage", img)
+                        }
                       />
-                      <Field label="Sidebar text">
+
+                      <Field label="Text colour">
                         <ColorInput
                           value={form.prospectTheme.sidebarText}
                           onChange={(v) =>
@@ -210,14 +252,14 @@ export default function EditHubScreen() {
                         />
                       </Field>
 
-                      <Field label="Button background">
+                      <Field label="Button colour">
                         <ColorInput
                           value={form.prospectTheme.buttonBg}
                           onChange={(v) => update("prospectTheme.buttonBg", v)}
                         />
                       </Field>
 
-                      <Field label="Button text">
+                      <Field label="Button text colour">
                         <ColorInput
                           value={form.prospectTheme.buttonText}
                           onChange={(v) =>
@@ -226,7 +268,7 @@ export default function EditHubScreen() {
                         />
                       </Field>
 
-                      <Field label="Button hover background">
+                      <Field label="Button hover colour">
                         <ColorInput
                           value={form.prospectTheme.buttonHoverColor}
                           onChange={(v) =>

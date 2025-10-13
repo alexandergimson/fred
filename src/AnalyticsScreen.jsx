@@ -80,7 +80,7 @@ export default function AnalyticsScreen() {
   return (
     <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col">
+        <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col shadow-sm">
           <HubScreenHeader
             title="Analytics"
             action={{

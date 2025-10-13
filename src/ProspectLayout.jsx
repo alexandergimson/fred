@@ -6,6 +6,7 @@ import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
 import ProspectMetaSidebar from "./ProspectSidebarRight";
 import SideBar from "./ProspectSidebarLeft"; // left list
 import Main from "./ProspectContentViewer"; // center PDF/Image/Embed
+import "./prospect.css";
 
 // contrast util
 function getContrastColor(hex) {
@@ -18,17 +19,72 @@ function getContrastColor(hex) {
   return yiq >= 128 ? "#000" : "#fff";
 }
 
+const clamp01 = (n) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
+const hexToRgb = (hex = "#000000") => {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2) || "00", 16);
+  const g = parseInt(h.slice(2, 4) || "00", 16);
+  const b = parseInt(h.slice(4, 6) || "00", 16);
+  return { r, g, b };
+};
+const withAlpha = (hex, alphaPct) => {
+  const a = clamp01(alphaPct ?? 100) / 100;
+  if (a >= 0.999) return hex || "#000000";
+  const { r, g, b } = hexToRgb(hex || "#000000");
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
+};
+
 const cssGradient = (g) => {
-  if (!g || !Array.isArray(g.stops) || g.stops.length < 2) return null;
+  if (!g || !Array.isArray(g.stops) || g.stops.length === 0) return null;
+
+  let stops = g.stops
+    .filter((s) => s && s.color)
+    .map((s, i) => ({
+      color: s.color,
+      alpha: clamp01(s.alpha ?? 100),
+      at:
+        s.at == null
+          ? g.stops.length === 1
+            ? i
+              ? 100
+              : 0
+            : Math.round((i / (g.stops.length - 1)) * 100)
+          : clamp01(s.at),
+    }))
+    .sort((a, b) => a.at - b.at);
+
+  if (stops.length === 1) {
+    const s = stops[0];
+    stops = [
+      { ...s, at: 0 },
+      { ...s, at: 100 },
+    ];
+  }
+
+  if (stops[0].at > 0) stops.unshift({ ...stops[0], at: 0 });
+  if (stops[stops.length - 1].at < 100)
+    stops.push({ ...stops[stops.length - 1], at: 100 });
+
   const angle = typeof g.angle === "number" ? `${g.angle}deg` : "135deg";
-  const parts = g.stops.map(
-    (s) => `${s.color}${typeof s.at === "number" ? ` ${s.at}%` : ""}`
-  );
+  const parts = stops.map((s) => `${withAlpha(s.color, s.alpha)} ${s.at}%`);
   return `linear-gradient(${angle}, ${parts.join(", ")})`;
 };
 
-const bgValue = (mode, solid, gradient) =>
-  mode === "gradient" ? cssGradient(gradient) || solid : solid;
+const bgValue = (
+  mode,
+  solid,
+  gradient,
+  image,
+  fit = "cover",
+  position = "center"
+) => {
+  if (mode === "image" && image) {
+    const url = typeof image === "string" ? image : image.url;
+    // CSS background shorthand: image URL + position / size + no-repeat
+    return `url("${url}") ${position} / ${fit} no-repeat`;
+  }
+  return mode === "gradient" ? cssGradient(gradient) || solid : solid;
+};
 
 export default function ProspectLayout() {
   const { hubId, shareId } = useParams(); // shareId is optional depending on your route
@@ -97,7 +153,14 @@ export default function ProspectLayout() {
   const primaryFallback = hub?.colors?.primary || "#1F50AF";
 
   const sidebarSolid = t.sidebarBg ?? hub?.colors?.tertiary ?? "#F7F8FC";
-  const sidebarBg = bgValue(t.sidebarBgMode, sidebarSolid, t.sidebarGradient);
+  const sidebarBg = bgValue(
+    t.sidebarBgMode || "solid",
+    sidebarSolid,
+    t.sidebarGradient,
+    t.sidebarBgImage, // NEW
+    t.sidebarBgImageFit || "cover", // NEW
+    t.sidebarBgImagePosition || "center" // NEW
+  );
 
   const headerSolid = t.headerBg ?? "#FFFFFF";
   const headerBg = bgValue(t.headerBgMode, headerSolid, t.headerGradient);
@@ -122,6 +185,11 @@ export default function ProspectLayout() {
 
     "--pv-content-bg": contentBg,
     "--pv-header-height": "5rem", // used as a vertical rhythm unit
+
+    "--brand": t.buttonBg ?? primaryFallback, // base button colour (user-picked)
+    "--brand-hover": t.buttonHoverColor || t.buttonBg || primaryFallback, // hover colour (user-picked) or fallback
+    "--btn-text":
+      t.buttonText ?? getContrastColor(t.buttonBg ?? primaryFallback), // readable text
   };
 
   // shared width + safeguard for both sidebars

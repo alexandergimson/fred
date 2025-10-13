@@ -196,19 +196,19 @@ export default function HubAnalyticsScreen() {
               <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-lg border border-gray-200 p-4 bg-white">
                   <div className="text-sm text-gray-500">Total views</div>
-                  <div className="mt-1 text-2xl font-semibold">
+                  <div className="mt-1 text-lg font-semibold">
                     {overview.viewCount?.toLocaleString?.() ?? 0}
                   </div>
                 </div>
                 <div className="rounded-lg border border-gray-200 p-4 bg-white">
                   <div className="text-sm text-gray-500">Avg. engagement</div>
-                  <div className="mt-1 text-2xl font-semibold">
+                  <div className="mt-1 text-lg font-semibold">
                     {formatDuration(overview.avgEngagementSec)}
                   </div>
                 </div>
                 <div className="rounded-lg border border-gray-200 p-4 bg-white">
                   <div className="text-sm text-gray-500">Last viewed</div>
-                  <div className="mt-1 text-2xl font-semibold">
+                  <div className="mt-1 text-lg font-semibold">
                     {formatDate(overview.lastViewedAt)}
                   </div>
                 </div>

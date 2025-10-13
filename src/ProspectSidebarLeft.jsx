@@ -109,23 +109,13 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
                 key={item.id}
                 onClick={() => onSelect(item.id)}
                 title={label}
-                className="w-full max-w-[280px] h-10 my-1 flex items-center px-2 rounded-lg text-sm transition-colors cursor-pointer relative"
-                style={{
-                  background: isActive ? "var(--pv-btn-bg)" : "transparent",
-                  color: isActive
-                    ? "var(--pv-btn-text)"
-                    : "var(--pv-sidebar-text)",
-                }}
-                onMouseEnter={(e) => {
-                  setHoveredId(item.id);
-                  if (!isActive)
-                    e.currentTarget.style.background = "var(--pv-btn-hover-bg)";
-                }}
-                onMouseLeave={(e) => {
+                className={`nav-item w-full max-w-[280px] h-10 my-1 flex items-center px-2 rounded-lg text-sm ${
+                  isActive ? "nav-item--active" : ""
+                }`}
+                onMouseEnter={() => setHoveredId(item.id)}
+                onMouseLeave={() => {
                   setHoveredId(null);
                   setIconHoverId(null);
-                  if (!isActive)
-                    e.currentTarget.style.background = "transparent";
                 }}
               >
                 <span className="truncate pr-3">{label}</span>
@@ -146,7 +136,7 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
                     style={{
                       width: 28,
                       height: 28,
-                      color: "var(--pv-btn-text)", // same colour as active button text (right-side text)
+                      color: "var(--pv-btn-text)",
                     }}
                   >
                     {/* faint circle on icon hover */}
