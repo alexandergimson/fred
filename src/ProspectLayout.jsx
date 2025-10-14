@@ -211,7 +211,7 @@ export default function ProspectLayout() {
 
       {/* CENTER: viewer — fills remaining space */}
       <div
-        className="flex-1 min-w-0"
+        className="flex-1 min-w-0 mt-1"
         style={{ background: "transparent", width: "100%" }}
       >
         <div className="h-full w-full overflow-hidden">

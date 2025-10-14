@@ -6,7 +6,7 @@ export default function HubScreenLayout() {
   return (
     <div className="flex h-screen">
       <AdminSidebar />
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 mt-1">
         <Outlet />
       </div>
     </div>
