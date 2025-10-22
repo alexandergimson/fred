@@ -55,39 +55,28 @@
 
 /* ---- Components ---- */
 @layer components {
-  /* Page transition animation */
   .page-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
 
   .UserPrimaryCta {
-    @apply inline-flex items-center justify-center gap-2 w-40 h-10 rounded-lg text-sm
+    @apply inline-flex items-center justify-center gap-2 w-20 h-10 rounded-lg text-sm
       bg-primary text-white cursor-pointer
-      border border-transparent
-      shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
-      -translate-x-[2px] hover:translate-x-0 transform-gpu
-      transition-[transform,background-color,color,border-color,box-shadow,width] duration-500 ease-out
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-      disabled:opacity-50 disabled:pointer-events-none
+      border-transparent
+      shadow-sm hover:shadow-md 
+      duration-600 ease-out
       hover:bg-background hover:text-primary hover:border-primary hover:translate-y-[-2px]
       sm:w-10
       md:w-10 
       lg:w-40;
   }
 
-  .UserPrimaryCta__label {
-    @apply hidden sm:inline;
-  }
-
   .UserSecondaryCta {
     @apply inline-flex items-center justify-center gap-2 w-20 h-10 rounded-lg text-sm
       bg-secondary text-white cursor-pointer
-      border border-transparent
-      shadow-sm hover:shadow-md active:shadow-sm active:translate-y-px
-      -translate-x-[2px] hover:translate-x-0 transform-gpu
-      transition-[transform,background-color,color,border-color,box-shadow,width] duration-500 ease-out
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-      disabled:opacity-50 disabled:pointer-events-none
+      border-transparent
+      shadow-sm hover:shadow-md 
+      duration-600 ease-out
       hover:bg-background hover:text-primary hover:border-secondary hover:translate-y-[-2px]
       sm:w-10
       md:w-10 
@@ -101,7 +90,7 @@
       shadow-sm hover:bg-primary hover:shadow-md hover:text-white
       active:shadow-sm active:translate-y-px
       transform-gpu
-      transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
+      transition-[width,background-color,color,border-color,box-shadow,transform] duration-600 ease-out
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
       disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px];
   }
@@ -116,7 +105,7 @@
       shadow-sm hover:shadow-md
       active:shadow-sm active:translate-y-px
       transform-gpu
-      transition-[width,background-color,color,border-color,box-shadow,transform] duration-500 ease-out
+      transition-[width,background-color,color,border-color,box-shadow,transform] duration-600 ease-out
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
       disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px]
       hover:bg-danger hover:text-white;
@@ -178,4 +167,9 @@
   :where(button, input, select, textarea) {
     font: inherit;
   }
+}
+
+canvas,
+.react-pdf__Page__canvas {
+  background: transparent !important;
 }

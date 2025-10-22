@@ -22,12 +22,9 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
   // replace downloadFile with this:
   async function downloadFile(url, filename = "download") {
     try {
-      // 1) Fetch the file as a Blob
       const res = await fetch(url, { credentials: "omit", mode: "cors" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
-
-      // 2) Create a temporary object URL and "click" a hidden <a download>
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objectUrl;
@@ -37,7 +34,6 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
       a.remove();
       URL.revokeObjectURL(objectUrl);
     } catch (err) {
-      // Fallback: open the file URL (adds a hint param some CDNs respect)
       const a = document.createElement("a");
       a.href = url + (url.includes("?") ? "&" : "?") + "download=1";
       a.target = "_blank";
@@ -49,7 +45,6 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
   }
 
   function filenameFor(item) {
-    // Try to keep a sensible filename (fallback to item.name or last path segment)
     try {
       const u = new URL(item.fileUrl);
       const last = u.pathname.split("/").filter(Boolean).pop() || "";
@@ -75,9 +70,9 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
         ...(style || {}),
       }}
     >
-      {/* Top logo area (same height as header) */}
+      {/* ✅ Padded top logo area */}
       <div
-        className="shrink-0 flex items-center justify-center"
+        className="shrink-0 flex items-center justify-start px-4 py-2"
         style={{
           height: "var(--pv-header-height)",
           background: "transparent",
@@ -120,7 +115,6 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
               >
                 <span className="truncate pr-3">{label}</span>
 
-                {/* Right-side download affordance (only on active + hover + downloadable) */}
                 {showIcon && (
                   <span
                     role="button"
@@ -139,7 +133,6 @@ export default function SideBar({ logoUrl, items, activeId, onSelect, style }) {
                       color: "var(--pv-btn-text)",
                     }}
                   >
-                    {/* faint circle on icon hover */}
                     <span
                       className="absolute inset-0 rounded-full transition-opacity"
                       style={{

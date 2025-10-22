@@ -1,6 +1,8 @@
 // HubScreenHeader.jsx
-import { Link } from "react-router-dom";
 import PreviewIcon from "./icons/PreviewIcon";
+import CtaButton from "./components/CtaButton";
+
+const isInternal = (url) => typeof url === "string" && url.startsWith("/");
 
 export default function HubScreenHeader({
   title,
@@ -8,9 +10,6 @@ export default function HubScreenHeader({
   secondaryAction,
   className = "",
 }) {
-  const baseBtn = "UserPrimaryCta";
-  const secondaryBtn = "UserSecondaryCta";
-
   return (
     <header
       className={`py-4 ml-8 mr-8 flex items-center justify-between ${className}`}
@@ -22,39 +21,50 @@ export default function HubScreenHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Secondary CTA (Preview) */}
         {secondaryAction?.href && (
-          <a
-            href={secondaryAction.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${secondaryBtn} shrink-0`}
+          <CtaButton
+            variant="secondary"
+            {...(isInternal(secondaryAction.href)
+              ? { to: secondaryAction.href }
+              : { href: secondaryAction.href })}
+            aria-label={secondaryAction.label || "Preview"}
+            className="shrink-0"
+            icon={<PreviewIcon className="w-5 h-5" />}
             title={secondaryAction.label || "Preview"}
           >
-            <PreviewIcon className="w-5 h-5" />
             <span className="hidden lg:inline">
               {secondaryAction.label || "Preview"}
             </span>
-          </a>
+          </CtaButton>
         )}
 
+        {/* Primary CTA (Action) */}
         {action ? (
           action.to ? (
-            <Link to={action.to} className="shrink-0">
-              <button className={baseBtn} disabled={action.disabled}>
-                {action.icon ? action.icon : null}
-                <span className="hidden lg:inline">{action.label}</span>
-              </button>
-            </Link>
+            <CtaButton
+              variant="primary"
+              to={action.to}
+              disabled={action.disabled}
+              className="shrink-0"
+              icon={action.icon}
+              aria-label={action.label}
+              title={action.label}
+            >
+              <span className="hidden lg:inline">{action.label}</span>
+            </CtaButton>
           ) : (
-            <button
-              type="button"
+            <CtaButton
+              variant="primary"
               onClick={action.onClick}
               disabled={action?.disabled}
-              className={baseBtn + " shrink-0"}
+              className="shrink-0"
+              icon={action.icon}
+              aria-label={action.label}
+              title={action.label}
             >
-              {action.icon ? action.icon : null}
               <span className="hidden lg:inline">{action.label}</span>
-            </button>
+            </CtaButton>
           )
         ) : (
           <div />

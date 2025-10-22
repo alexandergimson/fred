@@ -6,7 +6,6 @@ import SidebarUserFooter from "./SidebarUserFooter";
 import HubsIcon from "./icons/HubsIcon";
 import AnalyticsIcon from "./icons/AnalyticsIcon";
 import HubOverviewIcon from "./icons/HubOverviewIcon";
-import HubContentIcon from "./icons/HubContentIcon";
 import AddContent from "./icons/AddContent";
 import HubDesignIcon from "./icons/HubDesignIcon";
 

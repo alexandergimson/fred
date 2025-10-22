@@ -183,7 +183,7 @@ export default function EditHubScreen() {
   return (
     <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
       <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col shadow-sm">
+        <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col shadow-sm">
           <HubScreenHeader
             title={`${hubName} | design`}
             secondaryAction={{

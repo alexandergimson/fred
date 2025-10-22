@@ -166,7 +166,7 @@ export default function ThemePreview({
             style={{ width: "16%" }}
           >
             <div
-              className="shrink-0 flex items-center justify-center"
+              className="shrink-0 flex items-center justify-center px-2"
               style={{ height: "5rem" }}
             >
               {logoUrl ? (

@@ -94,13 +94,6 @@ function ColumnFilter({ column }) {
   );
 }
 
-/**
- * DataTable
- * props:
- *  - columns: ColumnDef<T>[]
- *  - data: T[]
- *  - toolbar?: boolean (show auto-built filters)
- */
 export function DataTable({ columns, data, toolbar = true }) {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);

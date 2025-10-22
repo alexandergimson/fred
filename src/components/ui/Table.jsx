@@ -1,7 +1,7 @@
 // components/ui/Table.jsx
 export function TableShell({ children, className = "" }) {
   return (
-    <div className={`relative overflow-x-auto ${className}`}>
+    <div className={`relative overflow-x-auto rounded-md ${className}`}>
       {/* Horizontal scroll on small screens */}
       <div className="w-full overflow-x-auto">{children}</div>
     </div>

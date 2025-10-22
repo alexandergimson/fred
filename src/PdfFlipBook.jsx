@@ -42,7 +42,7 @@ const BookPage = React.forwardRef(({ children }, ref) => (
   </div>
 ));
 
-function CanvasPage({ pdf, pageNumber, width, height, queue }) {
+function CanvasPage({ pdf, pageNumber, width, height, queue, onRendered }) {
   const canvasRef = useRef(null);
   const pageRef = useRef(null);
   const renderTaskRef = useRef(null);
@@ -73,6 +73,7 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
       renderTaskRef.current = task;
       try {
         await task.promise;
+        onRendered?.(); // ✅ notify parent that this page finished a render pass
       } catch (err) {
         if (err?.name !== "RenderingCancelledException") throw err;
       } finally {
@@ -104,16 +105,16 @@ function CanvasPage({ pdf, pageNumber, width, height, queue }) {
         renderTaskRef.current?.cancel?.();
       } catch {}
     };
-  }, [pdf, pageNumber, width, height, queue]);
+  }, [pdf, pageNumber, width, height, queue, onRendered]);
 
   return <canvas ref={canvasRef} style={{ width, height, display: "block" }} />;
 }
 
 const PdfFlipBook = forwardRef(function PdfFlipBook(
   {
-    fileUrl, // preferred
-    url, // legacy support
-    layout = "spread", // "spread" | "single"
+    fileUrl,
+    url,
+    layout = "spread",
     gap = 16,
     pageAspect = 1.4142,
     maxConcurrent = 1,
@@ -125,6 +126,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     showCover = false,
     onFlip,
     onMeasure,
+    fadeMs = 300, // ← duration of the fade-in
   },
   ref
 ) {
@@ -140,7 +142,6 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   const [vh, setVh] = useState(0);
   const [ratio, setRatio] = useState(pageAspect || 1.4142);
   const loadedDocRef = useRef(null);
-
   const queue = useMemo(
     () => createRenderQueue(maxConcurrent),
     [maxConcurrent]
@@ -152,24 +153,21 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     return () => cancelAnimationFrame(id);
   }, []);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      next: () => flipRef.current?.getPageFlip()?.flipNext(),
-      prev: () => flipRef.current?.getPageFlip()?.flipPrev(),
-      goto: (p) => {
-        const inst = flipRef.current?.getPageFlip?.();
-        if (!inst || !Number.isFinite(p)) return;
-        inst.flip(p - 1);
-      },
-      getCurrentPage: () => {
-        const idx = flipRef.current?.getPageFlip?.().getCurrentPageIndex?.();
-        return typeof idx === "number" ? idx + 1 : null;
-      },
-    }),
-    []
-  );
+  useImperativeHandle(ref, () => ({
+    next: () => flipRef.current?.getPageFlip()?.flipNext(),
+    prev: () => flipRef.current?.getPageFlip()?.flipPrev(),
+    goto: (p) => {
+      const inst = flipRef.current?.getPageFlip?.();
+      if (!inst || !Number.isFinite(p)) return;
+      inst.flip(p - 1);
+    },
+    getCurrentPage: () => {
+      const idx = flipRef.current?.getPageFlip?.().getCurrentPageIndex?.();
+      return typeof idx === "number" ? idx + 1 : null;
+    },
+  }));
 
+  // Clean up flipbook
   useEffect(
     () => () => {
       try {
@@ -220,8 +218,8 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
       task = pdfjsLib.getDocument({
         url: src,
         disableStream: false,
-        disableAutoFetch: false,
-        rangeChunkSize: 64 * 1024,
+        disableAutoFetch: true,
+        rangeChunkSize: 256 * 1024,
       });
       try {
         const _pdf = await task.promise;
@@ -250,7 +248,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [src]);
 
-  // Dimensions (spread)
+  // Dimensions
   const spreadDims = useMemo(() => {
     if (!vw || !vh) return null;
     let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
@@ -272,7 +270,6 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [vw, vh, ratio, minWidth, maxWidth, minHeight, maxHeight, gap]);
 
-  // Dimensions (single)
   const singleDims = useMemo(() => {
     if (!vw || !vh) return null;
     let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
@@ -296,7 +293,6 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   const dims = layout === "single" ? singleDims : spreadDims;
   const totalPages = numPages;
 
-  // report size
   useEffect(() => {
     if (dims && totalPages) {
       onMeasure?.({
@@ -308,16 +304,33 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     }
   }, [dims, totalPages, onMeasure]);
 
-  // stable key
   const flipKey = useMemo(() => {
     if (!src || !totalPages) return "pending";
     return `${src}|${totalPages}|${layout}|${showCover ? "cover" : "nocover"}`;
   }, [src, totalPages, layout, showCover]);
 
+  // --- Fade-in logic ---
+  const [visible, setVisible] = useState(false);
+  const pagesRendered = useRef(0);
+  const onPageRendered = () => {
+    pagesRendered.current += 1;
+    if (!visible && pagesRendered.current >= 2) {
+      // show after 2 pages have rendered
+      setVisible(true);
+    }
+  };
+
   if (!src) return null;
 
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+    <div
+      ref={containerRef}
+      className="w-full h-full relative overflow-hidden"
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: `opacity ${fadeMs}ms ease`,
+      }}
+    >
       {error ? (
         <div className="p-4 text-sm text-red-600">{error}</div>
       ) : !ready || !pdf || !dims || !totalPages ? (
@@ -335,20 +348,18 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
             gap: `${gap}px`,
           }}
         >
-          {Array.from({ length: totalPages }, (_, i) => {
-            const pageNumber = i + 1;
-            return (
-              <div key={pageNumber}>
-                <CanvasPage
-                  pdf={pdf}
-                  pageNumber={pageNumber}
-                  width={dims.pageWidth}
-                  height={dims.pageHeight}
-                  queue={queue}
-                />
-              </div>
-            );
-          })}
+          {Array.from({ length: totalPages }, (_, i) => (
+            <div key={i}>
+              <CanvasPage
+                pdf={pdf}
+                pageNumber={i + 1}
+                width={dims.pageWidth}
+                height={dims.pageHeight}
+                queue={queue}
+                onRendered={onPageRendered}
+              />
+            </div>
+          ))}
         </div>
       ) : (
         <div
@@ -368,7 +379,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
             minHeight={minHeight}
             maxHeight={maxHeight}
             showCover={showCover}
-            mobileScrollSupport={true}
+            mobileScrollSupport
             usePortrait={false}
             startPage={0}
             maxShadowOpacity={0.5}
@@ -376,20 +387,18 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
             style={{ margin: "0 auto" }}
             ref={flipRef}
           >
-            {Array.from({ length: totalPages }, (_, i) => {
-              const pageNumber = i + 1;
-              return (
-                <BookPage key={pageNumber}>
-                  <CanvasPage
-                    pdf={pdf}
-                    pageNumber={pageNumber}
-                    width={dims.pageWidth}
-                    height={dims.pageHeight}
-                    queue={queue}
-                  />
-                </BookPage>
-              );
-            })}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <BookPage key={i}>
+                <CanvasPage
+                  pdf={pdf}
+                  pageNumber={i + 1}
+                  width={dims.pageWidth}
+                  height={dims.pageHeight}
+                  queue={queue}
+                  onRendered={onPageRendered}
+                />
+              </BookPage>
+            ))}
           </HTMLFlipBook>
         </div>
       )}

@@ -13,6 +13,8 @@ import { db } from "./lib/firebase";
 import HubScreenHeader from "./HubScreenHeader";
 import AnalyticsIcon from "./icons/AnalyticsIcon";
 import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
+import AnalyticsCard from "./components/AnalyticsCard";
+import PreviewIcon from "./icons/PreviewIcon"; // adjust path if needed
 
 /* helpers */
 function formatDuration(sec) {
@@ -175,9 +177,9 @@ export default function HubAnalyticsScreen() {
   }, [analyticsById]);
 
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
+    <main className="flex-1 h-screen bg-[#F4F7FE] flex flex-col page-fade-in">
       <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+        <div className="h-full bg-white rounded-xl shadow-sm flex flex-col">
           <HubScreenHeader
             title={`${hubName} | analytics`}
             secondaryAction={{
@@ -194,29 +196,24 @@ export default function HubAnalyticsScreen() {
           <div className="flex-1 overflow-auto ml-8 mr-8 mb-5">
             <div className="max-w-screen-2xl mx-auto space-y-8">
               <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-lg border border-gray-200 p-4 bg-white">
-                  <div className="text-sm text-gray-500">Total views</div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {overview.viewCount?.toLocaleString?.() ?? 0}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-gray-200 p-4 bg-white">
-                  <div className="text-sm text-gray-500">Avg. engagement</div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {formatDuration(overview.avgEngagementSec)}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-gray-200 p-4 bg-white">
-                  <div className="text-sm text-gray-500">Last viewed</div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {formatDate(overview.lastViewedAt)}
-                  </div>
-                </div>
+                <AnalyticsCard
+                  label="Total views"
+                  value={overview.viewCount?.toLocaleString?.() ?? 0}
+                  icon={<PreviewIcon className="w-4 h-4" />}
+                />
+                <AnalyticsCard
+                  label="Avg. engagement"
+                  value={formatDuration(overview.avgEngagementSec)}
+                />
+                <AnalyticsCard
+                  label="Last viewed"
+                  value={formatDate(overview.lastViewedAt)}
+                />
               </section>
 
               {/* Content Analytics */}
               {/* Content Analytics */}
-              <section className="rounded-lg rounded-b-none overflow-hidden">
+              <section className="rounded-lg rounded-b-none">
                 <div className="overflow-x-auto">
                   <TableShell>
                     <Table>

@@ -14,25 +14,46 @@ app.use(express.json({ limit: "10mb" }));
 const storage = new Storage();
 const db = new Firestore();
 
-// Helper: run a CLI command
+// -------------------------------
+// Small helpers
+// -------------------------------
 function run(cmd, args, cwd) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { cwd });
     let out = "", err = "";
     p.stdout.on("data", d => (out += d.toString()));
     p.stderr.on("data", d => (err += d.toString()));
-    p.on("close", code => (code === 0 ? resolve(out) : reject(new Error(err))));
+    p.on("error", reject);
+    p.on("close", code => {
+      if (code === 0) resolve(out);
+      else reject(new Error(`${cmd} exited ${code}\n${err || out}`));
+    });
   });
 }
 
+async function fileExists(p) {
+  try { await fs.access(p); return true; } catch { return false; }
+}
+
+function byPageNumber(a, b) {
+  const na = parseInt(a.match(/page-(\d+)\.png/)[1], 10);
+  const nb = parseInt(b.match(/page-(\d+)\.png/)[1], 10);
+  return na - nb;
+}
+
+// -------------------------------
+// Config knobs (safe defaults)
+// -------------------------------
+const CACHE_META = { cacheControl: "public, max-age=31536000, immutable" };
+const RENDER_DPI = 200;                // pdftocairo resolution (quality vs. size)
+const POSTER_WIDTH = 1600;             // poster width
+const PAGE_WIDTHS = [800, 1200, 1600]; // responsive sizes for per-page images
+
+// -------------------------------
 // POST /process
-// Body:
-// {
-//   "bucket": "your-firebase-bucket",
-//   "name": "hubs/{hubId}/content/{contentId}/original.pdf",
-//   "hubId": "...",
-//   "contentId": "..."
-// }
+// Body: { bucket, name, hubId, contentId }
+// name = gs://bucket/path OR object path (e.g. hubs/{hubId}/content/{contentId}/original.pdf)
+// -------------------------------
 app.post("/process", async (req, res) => {
   const { bucket, name, hubId, contentId } = req.body || {};
   if (!bucket || !name || !hubId || !contentId) {
@@ -40,90 +61,120 @@ app.post("/process", async (req, res) => {
   }
 
   const workdir = await fs.mkdtemp(path.join(os.tmpdir(), "pdf-"));
-  try {
-    const gcsFile = storage.bucket(bucket).file(name);
-    const localIn = path.join(workdir, "in.pdf");
-    await gcsFile.download({ destination: localIn });
+  const cleanup = async () => { try { await fs.rm(workdir, { recursive: true, force: true }); } catch {} };
 
-    // 1) (Optional) Linearise/optimise PDF for faster download if user clicks "Download"
-    // Ghostscript optimisation (safe defaults)
-    const localOpt = path.join(workdir, "opt.pdf");
+  try {
+    // -------------------------------
+    // 0) Input download
+    // -------------------------------
+    const objectPath = name.replace(/^gs:\/\/[^/]+\//, ""); // tolerate gs://bucket/obj form
+    const inputFile = storage.bucket(bucket).file(objectPath);
+    const localIn = path.join(workdir, "in.pdf");
+    await inputFile.download({ destination: localIn });
+
+    // Sanity check
+    if (!(await fileExists(localIn))) throw new Error("Downloaded PDF missing");
+
+    // -------------------------------
+    // 1) Optimise + linearise (Fast Web View) for streaming
+    // -------------------------------
+    const localOpt = path.join(workdir, "optimized.pdf");
+
+    // Ghostscript pass (quality + compression + FastWebView)
     await run("gs", [
-      "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.6", "-dPDFSETTINGS=/printer",
+      "-sDEVICE=pdfwrite",
+      "-dCompatibilityLevel=1.6",
+      "-dPDFSETTINGS=/printer",
+      "-dFastWebView=true",             // ✅ linearise for streaming
+      "-dDetectDuplicateImages=true",
+      "-dDownsampleColorImages=true",
+      "-dColorImageResolution=150",
       "-dNOPAUSE", "-dQUIET", "-dBATCH",
       `-sOutputFile=${localOpt}`, localIn
     ], workdir);
 
-    // 2) Render pages to PNG (vector-accurate). -r 200 is a good balance
-    // Output: page-1.png, page-2.png, ...
-    await run("pdftocairo", ["-png", "-r", "200", localOpt, path.join(workdir, "page")], workdir);
+    // Optional: reinforce linearisation with qpdf if present
+    try { await run("qpdf", ["--linearize", localOpt, localOpt], workdir); } catch {}
 
-    // 3) Build responsive WebP sizes + poster + LQIP
-    const widths = [800, 1200, 1600];
-    const outPrefix = `hubs/${hubId}/content/${contentId}`;
-    const pagesLocal = fssync.readdirSync(workdir)
+    // -------------------------------
+    // 2) Rasterise pages to PNG (vector-accurate) for posters/thumbnails
+    // -------------------------------
+    await run("pdftocairo", ["-png", "-r", String(RENDER_DPI), localOpt, path.join(workdir, "page")], workdir);
+
+    const pagePngs = fssync.readdirSync(workdir)
       .filter(f => /^page-\d+\.png$/.test(f))
-      .sort((a, b) => {
-        const na = parseInt(a.match(/page-(\d+)\.png/)[1], 10);
-        const nb = parseInt(b.match(/page-(\d+)\.png/)[1], 10);
-        return na - nb;
-      });
+      .sort(byPageNumber);
 
-    if (pagesLocal.length === 0) throw new Error("No rendered pages found");
+    if (pagePngs.length === 0) throw new Error("No rendered pages found from pdftocairo");
+
+    // -------------------------------
+    // 3) Build poster + LQIP + responsive per-page images (WebP)
+    // -------------------------------
+    const outPrefix = `hubs/${hubId}/content/${contentId}`;
+    const bkt = storage.bucket(bucket);
 
     // Poster (page 1)
-    const firstPagePath = path.join(workdir, pagesLocal[0]);
+    const firstPagePath = path.join(workdir, pagePngs[0]);
     const posterLocal = path.join(workdir, "poster.webp");
-    await sharp(firstPagePath).resize({ width: 1600 }).webp({ quality: 78 }).toFile(posterLocal);
+    await sharp(firstPagePath)
+      .resize({ width: POSTER_WIDTH })
+      .webp({ quality: 78 })
+      .toFile(posterLocal);
 
-    const lqipBuf = await sharp(firstPagePath).resize({ width: 32 }).webp({ quality: 30 }).toBuffer();
+    const lqipBuf = await sharp(firstPagePath)
+      .resize({ width: 32 })
+      .webp({ quality: 30 })
+      .toBuffer();
     const lqipDataUrl = `data:image/webp;base64,${lqipBuf.toString("base64")}`;
 
-    // Upload poster + lqip + optimized pdf
-    const bkt = storage.bucket(bucket);
-    const posterGcs = `${outPrefix}/posters/poster-1600.webp`;
+    // Upload poster
+    const posterGcs = `${outPrefix}/posters/poster-${POSTER_WIDTH}.webp`;
     await bkt.upload(posterLocal, {
       destination: posterGcs,
       contentType: "image/webp",
-      metadata: { cacheControl: "public, max-age=31536000, immutable" }
+      metadata: CACHE_META,
     });
 
+    // Upload optimised (linearised) PDF
     const optPdfGcs = `${outPrefix}/optimized.pdf`;
     await bkt.upload(localOpt, {
       destination: optPdfGcs,
       contentType: "application/pdf",
-      metadata: { cacheControl: "public, max-age=31536000, immutable" }
+      metadata: CACHE_META,
     });
 
     // Per-page responsive images
     const manifestPages = [];
-    for (const f of pagesLocal) {
+    for (const f of pagePngs) {
       const n = parseInt(f.match(/page-(\d+)\.png/)[1], 10);
       const full = path.join(workdir, f);
       const meta = await sharp(full).metadata();
       const aspect = (meta.height || 1) / (meta.width || 1);
       manifestPages.push({ n, aspect: Number(aspect.toFixed(5)) });
 
-      for (const w of widths) {
+      for (const w of PAGE_WIDTHS) {
         const out = path.join(workdir, `p${n}-${w}.webp`);
         await sharp(full).resize({ width: w }).webp({ quality: 76 }).toFile(out);
         const gcsPath = `${outPrefix}/pages/${n}-${w}.webp`;
         await bkt.upload(out, {
           destination: gcsPath,
           contentType: "image/webp",
-          metadata: { cacheControl: "public, max-age=31536000, immutable" }
+          metadata: CACHE_META,
         });
       }
     }
 
+    // -------------------------------
     // 4) Manifest
+    // -------------------------------
+    const publicBase = `https://storage.googleapis.com/${bucket}`;
     const manifest = {
       version: 1,
-      numPages: pagesLocal.length,
-      widths,
-      poster: `https://storage.googleapis.com/${bucket}/${posterGcs}`,
+      numPages: pagePngs.length,
+      widths: PAGE_WIDTHS,
+      poster: `${publicBase}/${posterGcs}`,
       lqip: lqipDataUrl,
-      pages: manifestPages
+      pages: manifestPages,
     };
 
     const manifestLocal = path.join(workdir, "manifest.json");
@@ -133,25 +184,34 @@ app.post("/process", async (req, res) => {
     await bkt.upload(manifestLocal, {
       destination: manifestGcs,
       contentType: "application/json",
-      metadata: { cacheControl: "public, max-age=31536000, immutable" }
+      metadata: CACHE_META,
     });
 
+    // -------------------------------
     // 5) Update Firestore doc
-    await db.doc(`hubs/${hubId}/content/${contentId}`).set({
-      imageManifestUrl: `https://storage.googleapis.com/${bucket}/${manifestGcs}`,
-      posterUrl: `https://storage.googleapis.com/${bucket}/${posterGcs}`,
-      posterLqip: lqipDataUrl,
-      fileUrl: `https://storage.googleapis.com/${bucket}/${optPdfGcs}`
-    }, { merge: true });
+    // -------------------------------
+    await db.doc(`hubs/${hubId}/content/${contentId}`).set(
+      {
+        imageManifestUrl: `${publicBase}/${manifestGcs}`,
+        posterUrl: `${publicBase}/${posterGcs}`,
+        posterLqip: lqipDataUrl,
+        fileUrl: `${publicBase}/${optPdfGcs}`, // linearised PDF for streaming
+      },
+      { merge: true }
+    );
 
     return res.json({ ok: true });
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ error: String(e) });
+    return res.status(500).json({ error: String(e?.message || e) });
   } finally {
-    try { await fs.rm(workdir, { recursive: true, force: true }); } catch {}
+    await cleanup();
   }
 });
 
+// Health
 app.get("/", (_, res) => res.send("OK"));
-app.listen(process.env.PORT || 8080, () => console.log("renderer up"));
+
+app.listen(process.env.PORT || 8080, () => {
+  console.log("renderer up");
+});

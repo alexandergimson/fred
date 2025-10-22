@@ -280,8 +280,9 @@ export default function EditHubScreen() {
                   </div>
 
                   {/* Theme preview below inputs */}
-                  <div>
-                    <div className="mt-4">
+                  <div className="text-sm">
+                    Hub preview
+                    <div className="mt-2">
                       <ThemePreview
                         theme={form.prospectTheme}
                         logoUrl={previewSrc}
