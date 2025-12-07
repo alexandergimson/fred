@@ -205,7 +205,7 @@ export default function EditHubScreen() {
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
-            title={`${hubName} | design`}
+            title={`${hubName} | Hub design`}
             secondaryAction={{
               label: "Preview Hub",
               href: `/prospect/${hubId}`,
@@ -252,6 +252,19 @@ export default function EditHubScreen() {
                         />
                       </Field>
 
+                      {/* NEW – right-hand sidebar text colour */}
+                      <Field label="Right sidebar text colour">
+                        <ColorInput
+                          value={
+                            form.prospectTheme.rightSidebarText ??
+                            form.prospectTheme.sidebarText
+                          }
+                          onChange={(v) =>
+                            update("prospectTheme.rightSidebarText", v)
+                          }
+                        />
+                      </Field>
+
                       <Field label="Button colour">
                         <ColorInput
                           value={form.prospectTheme.buttonBg}
@@ -281,7 +294,6 @@ export default function EditHubScreen() {
 
                   {/* Theme preview below inputs */}
                   <div className="text-sm">
-                    Hub preview
                     <div className="mt-2">
                       <ThemePreview
                         theme={form.prospectTheme}

@@ -73,7 +73,7 @@ function CanvasPage({ pdf, pageNumber, width, height, queue, onRendered }) {
       renderTaskRef.current = task;
       try {
         await task.promise;
-        onRendered?.(); // ✅ notify parent that this page finished a render pass
+        onRendered?.(); // notify parent that this page finished a render pass
       } catch (err) {
         if (err?.name !== "RenderingCancelledException") throw err;
       } finally {
@@ -126,7 +126,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     showCover = false,
     onFlip,
     onMeasure,
-    fadeMs = 300, // ← duration of the fade-in
+    fadeMs = 300, // duration of the fade-in
   },
   ref
 ) {
@@ -248,7 +248,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [src]);
 
-  // Dimensions
+  // Dimensions for spread layout (flipbook)
   const spreadDims = useMemo(() => {
     if (!vw || !vh) return null;
     let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
@@ -270,28 +270,33 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     };
   }, [vw, vh, ratio, minWidth, maxWidth, minHeight, maxHeight, gap]);
 
+  // Dimensions for single layout (fit width, allow vertical scroll)
   const singleDims = useMemo(() => {
-    if (!vw || !vh) return null;
-    let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
-    let pageW = Math.max(
-      minWidth,
-      Math.min(Math.floor(pageH / ratio), maxWidth)
+    if (!vw) return null;
+
+    // Fit page to available width (up to maxWidth)
+    let pageW = Math.max(minWidth, Math.min(vw, maxWidth));
+    // Height derived from aspect ratio (can exceed viewport height)
+    let pageH = Math.max(
+      minHeight,
+      Math.min(Math.floor(pageW * ratio), maxHeight)
     );
-    if (pageW > vw) {
-      const s = vw / pageW;
-      pageW = Math.floor(pageW * s);
-      pageH = Math.floor(pageH * s);
-    }
+
     return {
       pageWidth: pageW,
       pageHeight: pageH,
-      bookWidth: Math.min(vw, pageW),
+      bookWidth: pageW,
       bookHeight: pageH,
     };
-  }, [vw, vh, ratio, minWidth, maxWidth, minHeight, maxHeight]);
+  }, [vw, ratio, minWidth, maxWidth, minHeight, maxHeight]);
 
-  const dims = layout === "single" ? singleDims : spreadDims;
   const totalPages = numPages;
+  const isSinglePage = totalPages === 1;
+
+  // Force single layout when only one page
+  const effectiveLayout = isSinglePage ? "single" : layout;
+
+  const dims = effectiveLayout === "single" ? singleDims : spreadDims;
 
   useEffect(() => {
     if (dims && totalPages) {
@@ -306,8 +311,10 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
 
   const flipKey = useMemo(() => {
     if (!src || !totalPages) return "pending";
-    return `${src}|${totalPages}|${layout}|${showCover ? "cover" : "nocover"}`;
-  }, [src, totalPages, layout, showCover]);
+    return `${src}|${totalPages}|${effectiveLayout}|${
+      showCover ? "cover" : "nocover"
+    }`;
+  }, [src, totalPages, effectiveLayout, showCover]);
 
   // --- Fade-in logic ---
   const [visible, setVisible] = useState(false);
@@ -325,7 +332,9 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative overflow-hidden"
+      className={`w-full h-full relative ${
+        effectiveLayout === "single" ? "overflow-y-auto" : "overflow-hidden"
+      }`}
       style={{
         opacity: visible ? 1 : 0,
         transition: `opacity ${fadeMs}ms ease`,
@@ -337,31 +346,33 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
         <div className="w-full h-full grid place-items-center">
           <div className="w-80 h-96 bg-gray-100 rounded-md animate-pulse" />
         </div>
-      ) : layout === "single" ? (
+      ) : effectiveLayout === "single" ? (
+        // Single-page or stacked pages: fit width, scroll vertically
         <div
-          className="mx-auto"
-          style={{
-            width: `${dims.bookWidth}px`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: `${gap}px`,
-          }}
+          className="w-full flex justify-center"
+          style={{ padding: `${gap}px 0` }}
         >
-          {Array.from({ length: totalPages }, (_, i) => (
-            <div key={i}>
-              <CanvasPage
-                pdf={pdf}
-                pageNumber={i + 1}
-                width={dims.pageWidth}
-                height={dims.pageHeight}
-                queue={queue}
-                onRendered={onPageRendered}
-              />
-            </div>
-          ))}
+          <div
+            style={{
+              width: `${dims.bookWidth}px`,
+            }}
+          >
+            {Array.from({ length: totalPages }, (_, i) => (
+              <div key={i} style={{ marginBottom: gap }}>
+                <CanvasPage
+                  pdf={pdf}
+                  pageNumber={i + 1}
+                  width={dims.pageWidth}
+                  height={dims.pageHeight}
+                  queue={queue}
+                  onRendered={onPageRendered}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
+        // Spread/flipbook layout (unchanged)
         <div
           className="mx-auto"
           style={{

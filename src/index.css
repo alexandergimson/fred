@@ -83,38 +83,6 @@
       lg:w-40;
   }
 
-  .UserIconBtn {
-    @apply inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0
-      bg-background text-gray-700 cursor-pointer
-      ring-1 ring-black/5
-      shadow-sm hover:bg-primary hover:shadow-md hover:text-white
-      active:shadow-sm active:translate-y-px
-      transform-gpu
-      transition-[width,background-color,color,border-color,box-shadow,transform] duration-600 ease-out
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
-      disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px];
-  }
-  .UserIconBtn svg {
-    @apply w-4 h-4;
-  }
-
-  .UserIconBtnDanger {
-    @apply inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0
-      bg-background text-gray-700 cursor-pointer
-      ring-1 ring-black/5
-      shadow-sm hover:shadow-md
-      active:shadow-sm active:translate-y-px
-      transform-gpu
-      transition-[width,background-color,color,border-color,box-shadow,transform] duration-600 ease-out
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
-      disabled:opacity-60 disabled:cursor-not-allowed hover:translate-y-[-2px]
-      hover:bg-danger hover:text-white;
-  }
-
-  .UserDanger {
-    @apply bg-danger text-white hover:shadow-lg focus-visible:ring-red-500/40;
-  }
-
   .Card {
     @apply rounded-xl border border-gray-200 bg-white shadow-sm;
   }

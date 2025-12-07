@@ -137,6 +137,51 @@ export default function ProspectLayout() {
     }
   }, [hub]);
 
+  // Set favicon based on hub favicon/logo
+  useEffect(() => {
+    // Try to find the main favicon link tag
+    const link =
+      document.querySelector("link[rel='icon']") ||
+      document.querySelector("link[rel='shortcut icon']");
+
+    if (!link) return;
+
+    // Remember the original href once so we can restore it later
+    const originalHref =
+      link.getAttribute("data-original-href") ||
+      link.getAttribute("href") ||
+      "/vite.svg";
+
+    if (!link.getAttribute("data-original-href")) {
+      link.setAttribute("data-original-href", originalHref);
+    }
+
+    if (hub?.faviconUrl) {
+      // Prefer the dedicated favicon if set
+      link.setAttribute("href", hub.faviconUrl);
+    } else if (hub?.logoUrl) {
+      // Fallback to the hub logo if no favicon is uploaded
+      link.setAttribute("href", hub.logoUrl);
+    } else {
+      // Fallback to whatever was originally there
+      link.setAttribute("href", originalHref);
+    }
+
+    // Optional: restore the original favicon when this component unmounts
+    return () => {
+      const orig = link.getAttribute("data-original-href") || "/vite.svg";
+      link.setAttribute("href", orig);
+    };
+  }, [hub?.faviconUrl, hub?.logoUrl]);
+
+  useEffect(() => {
+    if (hub?.name) {
+      document.title = `${hub.name} Content Hub`;
+    } else {
+      document.title = `Loading...`;
+    }
+  }, [hub]);
+
   useEffect(() => {
     if (!activeId && sortedItems.length > 0) setActiveId(sortedItems[0].id);
   }, [sortedItems, activeId]);
@@ -174,6 +219,7 @@ export default function ProspectLayout() {
   const cssVars = {
     "--pv-sidebar-bg": sidebarBg,
     "--pv-sidebar-text": t.sidebarText ?? "#374151",
+    "--pv-sidebar-meta-text": t.rightSidebarText ?? t.sidebarText ?? "#374151", // NEW
     "--pv-logo-bg": t.logoBg ?? "#FFFFFF",
 
     "--pv-header-bg": headerBg,
@@ -233,11 +279,13 @@ export default function ProspectLayout() {
 
       {/* RIGHT: meta sidebar (CTA + names) */}
       <ProspectMetaSidebar
+        hub={hub}
         hubTitle={hub?.name || "Hub"}
         contentName={activeItem?.name || "—"}
         contactHref={hub?.contactLink || null}
         onSelect={setActiveId}
         style={sidebarStyle}
+        activeItem={activeItem}
       />
     </div>
   );

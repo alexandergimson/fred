@@ -1,4 +1,5 @@
 // ThemePreview.jsx — unified background like Prospect view (CSS-driven buttons/nav)
+import { Twitter, Linkedin, Facebook, Instagram } from "lucide-react";
 
 const FALLBACK_THEME = {
   sidebarBgMode: "solid",
@@ -147,8 +148,8 @@ export default function ThemePreview({
     "--brand-hover": t.buttonHoverColor || t.buttonBg || "#1F50AF",
     "--btn-text": t.buttonText || getContrastColor(t.buttonBg || "#1F50AF"),
     "--pv-sidebar-text": t.sidebarText || "#374151",
+    "--pv-sidebar-meta-text": t.rightSidebarText || t.sidebarText || "#374151",
   };
-
   return (
     <div className={anchorClass}>
       {label && <div className="mb-2 text-[11px] text-gray-700">{label}</div>}
@@ -163,10 +164,10 @@ export default function ThemePreview({
         >
           <aside
             className="flex flex-col overflow-hidden"
-            style={{ width: "16%" }}
+            style={{ width: "20%" }}
           >
             <div
-              className="shrink-0 flex items-center justify-center px-2"
+              className="shrink-0 flex items-center justify-start px-2"
               style={{ height: "5rem" }}
             >
               {logoUrl ? (
@@ -176,9 +177,9 @@ export default function ThemePreview({
               )}
             </div>
 
-            <div className="px-3 pt-4 space-y-2 text-sm">
+            <div className="px-3 pt-4 text-sm">
               {/* Selected item matches Prospect left-rail */}
-              <div className="h-8 px-2 grid place-items-center rounded font-medium nav-item nav-item--active">
+              <div className="h-8 px-2 grid place-items-center  font-medium nav-item nav-item--active">
                 Item A
               </div>
 
@@ -186,7 +187,7 @@ export default function ThemePreview({
               {["Item B", "Item C"].map((label) => (
                 <div
                   key={label}
-                  className="h-8 px-2 grid place-items-center rounded nav-item"
+                  className="h-8 px-2 grid place-items-center nav-item"
                 >
                   {label}
                 </div>
@@ -209,14 +210,31 @@ export default function ThemePreview({
           {/* RIGHT sidebar CTA uses the same button class */}
           <aside
             className="flex flex-col overflow-hidden"
-            style={{ width: "16%" }}
+            style={{ width: "20%" }}
           >
             <div className="px-3 pt-4 space-y-2 text-sm">
               <div className="h-8 px-2 grid place-items-center rounded btn-brand w-full">
                 Contact Us
               </div>
             </div>
-            <div className="px-4 py-3 space-y-3 text-sm leading-5">
+            {/* NEW: social icons preview (always show all four) */}
+            <div className="px-4 py-4 pb-4 flex justify-center">
+              <div
+                className="flex gap-3 text-[11px]"
+                style={{ color: "var(--pv-sidebar-meta-text)" }}
+              >
+                <Twitter size={14} />
+                <Linkedin size={14} />
+                <Facebook size={14} />
+                <Instagram size={14} />
+              </div>
+            </div>
+
+            {/* Info block uses right-sidebar text colour */}
+            <div
+              className="px-4 py-3 space-y-3 text-sm leading-5"
+              style={{ color: "var(--pv-sidebar-meta-text)" }}
+            >
               <div>
                 <div className="uppercase tracking-wide opacity-60 text-[10px]">
                   Hub
@@ -230,6 +248,7 @@ export default function ThemePreview({
                 <div>{nameContent}</div>
               </div>
             </div>
+
             <div className="flex-1" />
           </aside>
         </div>

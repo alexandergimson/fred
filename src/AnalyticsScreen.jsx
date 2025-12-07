@@ -7,32 +7,7 @@ import HubScreenHeader from "./HubScreenHeader";
 import HubsIcon from "./icons/HubsIcon";
 import PreviewIcon from "./icons/PreviewIcon";
 import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
-
-function ActionButton({ children, title, onClick, confirm, label, danger }) {
-  const handleClick = (e) => {
-    e.stopPropagation();
-    onClick?.(e);
-  };
-  const expanded = Boolean(confirm && danger);
-
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-expanded={expanded}
-      onClick={handleClick}
-      className={
-        expanded
-          ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
-          : danger
-          ? "UserIconBtnDanger"
-          : "UserIconBtn"
-      }
-    >
-      {expanded ? label ?? "Confirm?" : children}
-    </button>
-  );
-}
+import ActionButton from "./components/ActionButton"; // ✅ use shared component
 
 function formatDuration(sec) {
   if (sec === undefined || sec === null) return "—";

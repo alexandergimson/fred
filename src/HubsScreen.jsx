@@ -17,40 +17,7 @@ import {
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
-
-function ActionButton({
-  children,
-  title,
-  onClick,
-  confirm,
-  label,
-  danger,
-  className = "",
-}) {
-  const handleClick = (e) => {
-    e.stopPropagation();
-    onClick?.(e);
-  };
-  const expanded = Boolean(confirm && danger);
-
-  const base = expanded
-    ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
-    : danger
-    ? "UserIconBtnDanger"
-    : "UserIconBtn";
-
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-expanded={expanded}
-      onClick={handleClick}
-      className={`${base} ${className}`}
-    >
-      {expanded ? label ?? "Confirm?" : children}
-    </button>
-  );
-}
+import ActionButton from "./components/ActionButton";
 
 export default function HubsScreen() {
   const navigate = useNavigate();
@@ -181,40 +148,28 @@ export default function HubsScreen() {
                           <div className="flex justify-end gap-2">
                             <ActionButton
                               title="Edit details"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(r.id);
-                              }}
+                              onClick={() => onEdit(r.id)}
                             >
                               <HubOverviewIcon className="w-4 h-4" />
                             </ActionButton>
 
                             <ActionButton
                               title="Add content"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onOpen(r.id);
-                              }}
+                              onClick={() => onOpen(r.id)}
                             >
                               <AddContent className="w-4 h-4" />
                             </ActionButton>
 
                             <ActionButton
                               title="Edit design"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDesign(r.id);
-                              }}
+                              onClick={() => onDesign(r.id)}
                             >
                               <HubDesignIcon className="w-4 h-4" />
                             </ActionButton>
 
                             <ActionButton
                               title="Preview"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onPreview(r.id);
-                              }}
+                              onClick={() => onPreview(r.id)}
                             >
                               <PreviewIcon className="w-4 h-4" />
                             </ActionButton>
@@ -222,7 +177,7 @@ export default function HubsScreen() {
                             {confirmDeleteId === r.id ? (
                               <ActionButton
                                 title="Confirm delete"
-                                danger
+                                intent="danger"
                                 confirm
                                 label="Confirm?"
                                 onClick={() => handleDelete(r.id)}
@@ -230,11 +185,8 @@ export default function HubsScreen() {
                             ) : (
                               <ActionButton
                                 title="Delete"
-                                danger
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setConfirmDeleteId(r.id);
-                                }}
+                                intent="danger"
+                                onClick={() => setConfirmDeleteId(r.id)}
                               >
                                 <DeleteIcon className="w-4 h-4" />
                               </ActionButton>

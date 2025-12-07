@@ -17,33 +17,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { TableShell, Table, Thead, Th, Tr, Td } from "./components/ui/Table";
-
-function ActionButton({ children, title, onClick, confirm, label, danger }) {
-  const handleClick = (e) => {
-    e.stopPropagation();
-    onClick?.(e);
-  };
-
-  const expanded = Boolean(confirm && danger); // same behaviour as HubsScreen
-
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-expanded={expanded}
-      onClick={handleClick}
-      className={
-        expanded
-          ? "UserIconBtnDanger UserDanger w-28 px-4 shadow-md hover:shadow-lg"
-          : danger
-          ? "UserIconBtnDanger"
-          : "UserIconBtn"
-      }
-    >
-      {expanded ? label ?? "Confirm?" : children}
-    </button>
-  );
-}
+import ActionButton from "./components/ActionButton";
 
 export default function HubContentScreen() {
   const { hubId } = useParams();
@@ -260,7 +234,7 @@ export default function HubContentScreen() {
                             {confirmDeleteId === r.id ? (
                               <ActionButton
                                 title="Confirm delete"
-                                danger
+                                intent="danger"
                                 confirm
                                 label="Confirm?"
                                 onClick={() => handleDelete(r.id)}
@@ -268,7 +242,7 @@ export default function HubContentScreen() {
                             ) : (
                               <ActionButton
                                 title="Delete"
-                                danger
+                                intent="danger"
                                 onClick={() => setConfirmDeleteId(r.id)}
                               >
                                 <DeleteIcon className="w-4 h-4" />
