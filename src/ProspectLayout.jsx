@@ -96,13 +96,12 @@ export default function ProspectLayout() {
 
   // hub
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const snap = await getDoc(doc(db, "hubs", hubId));
-        if (snap.exists()) setHub({ id: snap.id, ...snap.data() });
-      } finally {
-      }
+      const snap = await getDoc(doc(db, "hubs", hubId));
+      if (!cancelled && snap.exists()) setHub({ id: snap.id, ...snap.data() });
     })();
+    return () => { cancelled = true; };
   }, [hubId]);
 
   // content list
