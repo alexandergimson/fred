@@ -1,5 +1,5 @@
 // PdfFlipBook.jsx — accepts fileUrl OR url, stacks on narrow
-import React, {
+import {
   useEffect,
   useMemo,
   useRef,
@@ -36,7 +36,7 @@ function createRenderQueue(maxConcurrent = 1) {
   return { enqueue };
 }
 
-const BookPage = React.forwardRef(({ children }, ref) => (
+const BookPage = forwardRef(({ children }, ref) => (
   <div ref={ref} className="relative overflow-hidden bg-transparent">
     {children}
   </div>

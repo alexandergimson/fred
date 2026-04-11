@@ -175,14 +175,6 @@ export default function ProspectLayout() {
   }, [hub?.faviconUrl, hub?.logoUrl]);
 
   useEffect(() => {
-    if (hub?.name) {
-      document.title = `${hub.name} Content Hub`;
-    } else {
-      document.title = `Loading...`;
-    }
-  }, [hub]);
-
-  useEffect(() => {
     if (!activeId && sortedItems.length > 0) setActiveId(sortedItems[0].id);
   }, [sortedItems, activeId]);
 
