@@ -1,5 +1,4 @@
 // src/components/AnalyticsCard.jsx
-import React from "react";
 
 export default function AnalyticsCard({ label, value, icon, className = "" }) {
   return (

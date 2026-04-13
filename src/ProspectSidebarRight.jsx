@@ -1,6 +1,5 @@
 // ProspectSidebarRight.jsx
-import { Twitter, Linkedin, Facebook, Instagram } from "lucide-react";
-import Download from "./icons/Download";
+import { Download, Twitter, Linkedin, Facebook, Instagram } from "./icons";
 
 export default function ProspectMetaSidebar({
   hub,

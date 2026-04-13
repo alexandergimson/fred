@@ -9,3 +9,7 @@ export { default as RotateCw } from "./RotateCw";
 export { default as Download } from "./Download";
 export { default as Maximize2 } from "./Maximize2";
 export { default as Minimize2 } from "./Minimize2";
+export { default as Twitter } from "./Twitter";
+export { default as Linkedin } from "./Linkedin";
+export { default as Facebook } from "./Facebook";
+export { default as Instagram } from "./Instagram";

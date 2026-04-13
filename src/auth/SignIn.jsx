@@ -56,7 +56,6 @@ export default function SignIn() {
     setError("");
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      // redirect after successful Google sign-in
       navigate("/admin/hubs", { replace: true });
     } catch (err) {
       setError(err.message || "Google sign-in failed");

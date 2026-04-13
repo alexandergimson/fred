@@ -1,5 +1,4 @@
 // src/components/ActionButton.jsx
-import React from "react";
 
 /**
  * Icon-first action button for row/card controls.

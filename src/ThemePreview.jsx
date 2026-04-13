@@ -1,5 +1,5 @@
 // ThemePreview.jsx — unified background like Prospect view (CSS-driven buttons/nav)
-import { Twitter, Linkedin, Facebook, Instagram } from "lucide-react";
+import { Twitter, Linkedin, Facebook, Instagram } from "./icons";
 
 const FALLBACK_THEME = {
   sidebarBgMode: "solid",

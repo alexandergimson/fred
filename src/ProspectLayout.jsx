@@ -96,13 +96,12 @@ export default function ProspectLayout() {
 
   // hub
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const snap = await getDoc(doc(db, "hubs", hubId));
-        if (snap.exists()) setHub({ id: snap.id, ...snap.data() });
-      } finally {
-      }
+      const snap = await getDoc(doc(db, "hubs", hubId));
+      if (!cancelled && snap.exists()) setHub({ id: snap.id, ...snap.data() });
     })();
+    return () => { cancelled = true; };
   }, [hubId]);
 
   // content list
@@ -173,14 +172,6 @@ export default function ProspectLayout() {
       link.setAttribute("href", orig);
     };
   }, [hub?.faviconUrl, hub?.logoUrl]);
-
-  useEffect(() => {
-    if (hub?.name) {
-      document.title = `${hub.name} Content Hub`;
-    } else {
-      document.title = `Loading...`;
-    }
-  }, [hub]);
 
   useEffect(() => {
     if (!activeId && sortedItems.length > 0) setActiveId(sortedItems[0].id);
