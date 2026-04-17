@@ -32,13 +32,37 @@ function isPdfFile(file) {
   return t === "application/pdf" || /\.pdf$/i.test(file?.name || "");
 }
 
+function buildPdfProcessingFields(file, path) {
+  if (!isPdfFile(file)) {
+    return {
+      processingStatus: null,
+      thumbnailUrl: null,
+      pageCount: null,
+      pageAspectRatio: null,
+      previewPages: [],
+      originalFilePath: path,
+      fileMimeType: file?.type || null,
+    };
+  }
+
+  return {
+    processingStatus: "pending",
+    thumbnailUrl: null,
+    pageCount: null,
+    pageAspectRatio: null,
+    previewPages: [],
+    originalFilePath: path,
+    fileMimeType: file?.type || "application/pdf",
+  };
+}
+
 /** Inline dropzone (PDFs or images) */
 function InlineFileDropzone({
-  selectedFile, // File | null
-  onPick, // (file: File) => void
+  selectedFile,
+  onPick,
   accept = "application/pdf,image/*",
   maxBytes = 16 * 1024 * 1024,
-  triggerRef, // ref to expose a .click() trigger
+  triggerRef,
 }) {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -157,9 +181,9 @@ export default function CreateContentScreen() {
 
   const [form, setForm] = useState({
     name: "",
-    kind: "embed", // "embed" | "file"
+    kind: "embed",
     embedUrl: "",
-    newFile: null, // File when kind === "file"
+    newFile: null,
   });
 
   const openPickerRef = useRef(null);
@@ -178,7 +202,6 @@ export default function CreateContentScreen() {
         return;
       }
 
-      // Reserve an ID first
       const colRef = collection(db, "hubs", hubId, "content");
       const docRef = doc(colRef);
       const contentId = docRef.id;
@@ -188,6 +211,15 @@ export default function CreateContentScreen() {
         kind: form.kind,
         embedUrl: form.kind === "embed" ? (form.embedUrl || "").trim() : null,
         fileUrl: null,
+
+        processingStatus: null,
+        thumbnailUrl: null,
+        pageCount: null,
+        pageAspectRatio: null,
+        previewPages: [],
+        originalFilePath: null,
+        fileMimeType: null,
+
         position: Date.now(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -203,7 +235,6 @@ export default function CreateContentScreen() {
         return;
       }
 
-      // kind === "file"
       const f = form.newFile;
       if (!f) {
         alert("Please choose a file to upload");
@@ -214,10 +245,8 @@ export default function CreateContentScreen() {
         return;
       }
 
-      // Create doc first (so item exists while uploading)
       await setDoc(docRef, base);
 
-      // Versioned filename + strong caching
       const versionedName = `${Date.now()}-${f.name}`;
       const path = `hubs/${hubId}/content/${contentId}/${versionedName}`;
       const fileRef = ref(storage, path);
@@ -237,9 +266,26 @@ export default function CreateContentScreen() {
 
       await updateDoc(docRef, {
         fileUrl,
+        ...buildPdfProcessingFields(f, path),
         updatedAt: serverTimestamp(),
       });
-
+      if (isPdfFile(f)) {
+        fetch(
+          "https://fred-pdf-processor-867347292100.europe-west2.run.app/process-pdf",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              hubId,
+              contentId,
+            }),
+          },
+        ).catch((err) => {
+          console.error("Failed to start PDF processing", err);
+        });
+      }
       navigate(`/admin/hubs/${hubId}/content`);
     } catch (e) {
       console.error(e);

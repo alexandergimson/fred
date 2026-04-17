@@ -42,15 +42,24 @@ const BookPage = forwardRef(({ children }, ref) => (
   </div>
 ));
 
-function CanvasPage({ pdf, pageNumber, width, height, queue, onRendered }) {
+function CanvasPage({
+  pdf,
+  pageNumber,
+  width,
+  height,
+  queue,
+  onRendered,
+  shouldRender = true,
+  highQuality = true,
+}) {
   const canvasRef = useRef(null);
   const pageRef = useRef(null);
   const renderTaskRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!pdf || !width || !height || !canvasRef.current) return;
-
+    if (!shouldRender || !pdf || !width || !height || !canvasRef.current)
+      return;
     const renderAt = async (page, scale, dprOverride) => {
       if (cancelled) return;
       const canvas = canvasRef.current;
@@ -90,13 +99,12 @@ function CanvasPage({ pdf, pageNumber, width, height, queue, onRendered }) {
       const scale = Math.min(width / vp1.width, height / vp1.height);
 
       try {
-        await queue.enqueue(() => renderAt(page, scale, 1));
+        await queue.enqueue(() =>
+          renderAt(page, scale, highQuality ? undefined : 1),
+        );
       } catch (err) {
         if (err?.name !== "RenderingCancelledException") throw err;
-        return;
       }
-      if (cancelled) return;
-      queue.enqueue(() => renderAt(page, scale)).catch(() => {});
     })();
 
     return () => {
@@ -105,8 +113,16 @@ function CanvasPage({ pdf, pageNumber, width, height, queue, onRendered }) {
         renderTaskRef.current?.cancel?.();
       } catch {}
     };
-  }, [pdf, pageNumber, width, height, queue, onRendered]);
-
+  }, [
+    pdf,
+    pageNumber,
+    width,
+    height,
+    queue,
+    onRendered,
+    shouldRender,
+    highQuality,
+  ]);
   return <canvas ref={canvasRef} style={{ width, height, display: "block" }} />;
 }
 
@@ -128,7 +144,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     onMeasure,
     fadeMs = 300, // duration of the fade-in
   },
-  ref
+  ref,
 ) {
   const src = fileUrl || url || null;
 
@@ -144,7 +160,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
   const loadedDocRef = useRef(null);
   const queue = useMemo(
     () => createRenderQueue(maxConcurrent),
-    [maxConcurrent]
+    [maxConcurrent],
   );
 
   const [ready, setReady] = useState(false);
@@ -174,7 +190,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
         flipRef.current?.getPageFlip?.()?.destroy?.();
       } catch {}
     },
-    []
+    [],
   );
 
   // ResizeObserver
@@ -254,7 +270,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     let pageH = Math.max(minHeight, Math.min(vh, maxHeight));
     let pageW = Math.max(
       minWidth,
-      Math.min(Math.floor(pageH / ratio), maxWidth)
+      Math.min(Math.floor(pageH / ratio), maxWidth),
     );
     const combined = pageW * 2 + gap;
     if (combined > vw) {
@@ -279,7 +295,7 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
     // Height derived from aspect ratio (can exceed viewport height)
     let pageH = Math.max(
       minHeight,
-      Math.min(Math.floor(pageW * ratio), maxHeight)
+      Math.min(Math.floor(pageW * ratio), maxHeight),
     );
 
     return {
@@ -318,17 +334,36 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
 
   // --- Fade-in logic ---
   const [visible, setVisible] = useState(false);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const pagesRendered = useRef(0);
+
+  const shouldRenderPage = (pageNumber) => {
+    const index = pageNumber - 1;
+
+    if (effectiveLayout === "single") {
+      return index < 3;
+    }
+
+    return Math.abs(index - currentPageIndex) <= 3;
+  };
+
   const onPageRendered = () => {
     pagesRendered.current += 1;
-    if (!visible && pagesRendered.current >= 2) {
-      // show after 2 pages have rendered
+
+    const pagesNeededBeforeVisible = Math.min(2, totalPages || 1);
+
+    if (!visible && pagesRendered.current >= pagesNeededBeforeVisible) {
       setVisible(true);
     }
   };
 
-  if (!src) return null;
+  useEffect(() => {
+    setVisible(false);
+    pagesRendered.current = 0;
+    setCurrentPageIndex(0);
+  }, [src]);
 
+  if (!src) return null;
   return (
     <div
       ref={containerRef}
@@ -397,6 +432,11 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
             className="shadow"
             style={{ margin: "0 auto" }}
             ref={flipRef}
+            onFlip={(e) => {
+              const nextIndex = e?.data ?? 0;
+              setCurrentPageIndex(nextIndex);
+              onFlip?.(e);
+            }}
           >
             {Array.from({ length: totalPages }, (_, i) => (
               <BookPage key={i}>
@@ -407,6 +447,8 @@ const PdfFlipBook = forwardRef(function PdfFlipBook(
                   height={dims.pageHeight}
                   queue={queue}
                   onRendered={onPageRendered}
+                  shouldRender={shouldRenderPage(i + 1)}
+                  highQuality={Math.abs(i - currentPageIndex) <= 1}
                 />
               </BookPage>
             ))}

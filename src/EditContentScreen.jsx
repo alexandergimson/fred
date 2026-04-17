@@ -28,8 +28,38 @@ function extractPathFromUrl(url) {
     return null;
   }
 }
+
 function isImageUrl(url = "") {
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
+  return /\.(png|jpe?g|gif|webp|svg)($|\?)/i.test(url);
+}
+
+function isPdfFile(file) {
+  const t = file?.type || "";
+  return t === "application/pdf" || /\.pdf$/i.test(file?.name || "");
+}
+
+function buildPdfProcessingFields(file, path) {
+  if (!isPdfFile(file)) {
+    return {
+      processingStatus: null,
+      thumbnailUrl: null,
+      pageCount: null,
+      pageAspectRatio: null,
+      previewPages: [],
+      originalFilePath: path,
+      fileMimeType: file?.type || null,
+    };
+  }
+
+  return {
+    processingStatus: "pending",
+    thumbnailUrl: null,
+    pageCount: null,
+    pageAspectRatio: null,
+    previewPages: [],
+    originalFilePath: path,
+    fileMimeType: file?.type || "application/pdf",
+  };
 }
 
 /** Inline dropzone that can show current file OR new selection */
@@ -69,7 +99,6 @@ function InlineFileDropzone({
     onPick?.(file);
   }
 
-  // Nice filename from URL
   function fileNameFromUrl(url = "") {
     try {
       const fromO = extractPathFromUrl(url);
@@ -110,8 +139,10 @@ function InlineFileDropzone({
         </div>
       );
     }
+
     if (currentUrl) {
       const name = fileNameFromUrl(currentUrl);
+
       if (isImageUrl(currentUrl)) {
         return (
           <div className="flex items-center gap-3 px-4">
@@ -131,6 +162,7 @@ function InlineFileDropzone({
           </div>
         );
       }
+
       return (
         <div className="flex items-center gap-3 px-4">
           <div className="h-16 w-16 grid place-items-center rounded border border-gray-200 bg-white text-gray-500">
@@ -147,6 +179,7 @@ function InlineFileDropzone({
         </div>
       );
     }
+
     return (
       <div className="text-sm text-gray-600 text-center px-4">
         <div className="font-medium text-gray-700">Upload a PDF or image</div>
@@ -210,10 +243,17 @@ export default function EditContentScreen() {
 
   const [form, setForm] = useState({
     name: "",
-    kind: "embed", // "embed" | "file"
+    kind: "embed",
     embedUrl: "",
-    fileUrl: null, // current file URL (if kind === "file")
-    newFile: null, // File selected to replace
+    fileUrl: null,
+    processingStatus: null,
+    thumbnailUrl: null,
+    pageCount: null,
+    pageAspectRatio: null,
+    previewPages: [],
+    originalFilePath: null,
+    fileMimeType: null,
+    newFile: null,
   });
 
   const openPickerRef = useRef(null);
@@ -228,12 +268,20 @@ export default function EditContentScreen() {
           navigate(`/admin/hubs/${hubId}/content`);
           return;
         }
+
         const d = snap.data();
         setForm({
           name: d.name ?? "",
           kind: d.kind ?? "embed",
           embedUrl: d.embedUrl ?? "",
           fileUrl: d.fileUrl ?? null,
+          processingStatus: d.processingStatus ?? null,
+          thumbnailUrl: d.thumbnailUrl ?? null,
+          pageCount: d.pageCount ?? null,
+          pageAspectRatio: d.pageAspectRatio ?? null,
+          previewPages: d.previewPages ?? [],
+          originalFilePath: d.originalFilePath ?? null,
+          fileMimeType: d.fileMimeType ?? null,
           newFile: null,
         });
       } finally {
@@ -250,8 +298,8 @@ export default function EditContentScreen() {
       }
 
       let fileUrl = form.fileUrl ?? null;
+      let processingPatch = {};
 
-      // If replacing/adding a file, upload with caching + versioned filename
       if (form.kind === "file" && form.newFile) {
         const versionedName = `${Date.now()}-${form.newFile.name}`;
         const path = `hubs/${hubId}/content/${contentId}/${versionedName}`;
@@ -260,14 +308,16 @@ export default function EditContentScreen() {
           contentType: form.newFile.type || "application/pdf",
           cacheControl: "public,max-age=31536000,immutable",
         };
+
         const task = uploadBytesResumable(fileRef, form.newFile, metadata);
         await new Promise((res, rej) =>
-          task.on("state_changed", null, rej, res)
+          task.on("state_changed", null, rej, res),
         );
+
         fileUrl = await getDownloadURL(fileRef);
+        processingPatch = buildPdfProcessingFields(form.newFile, path);
       }
 
-      // Normalize token-less firebasestorage.app links if present
       if (
         form.kind === "file" &&
         fileUrl &&
@@ -284,8 +334,39 @@ export default function EditContentScreen() {
         kind: form.kind,
         embedUrl: form.kind === "embed" ? (form.embedUrl || "").trim() : null,
         fileUrl,
+        ...(form.kind === "file" && form.newFile
+          ? processingPatch
+          : form.kind === "embed"
+            ? {
+                processingStatus: null,
+                thumbnailUrl: null,
+                pageCount: null,
+                pageAspectRatio: null,
+                previewPages: [],
+                originalFilePath: null,
+                fileMimeType: null,
+              }
+            : {}),
         updatedAt: serverTimestamp(),
       });
+
+      if (form.kind === "file" && form.newFile && isPdfFile(form.newFile)) {
+        fetch(
+          "https://fred-pdf-processor-867347292100.europe-west2.run.app/process-pdf",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              hubId,
+              contentId,
+            }),
+          },
+        ).catch((err) => {
+          console.error("Failed to start PDF processing", err);
+        });
+      }
 
       navigate(`/admin/hubs/${hubId}/content`);
     } catch (e) {
@@ -309,7 +390,7 @@ export default function EditContentScreen() {
             }}
           />
 
-          <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8  pb-6">
+          <div className="flex-1 min-h-0 overflow-auto ml-8 mr-8 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
               <Field label="Name">
                 <input
@@ -340,7 +421,6 @@ export default function EditContentScreen() {
                 </Field>
               ) : (
                 <>
-                  {/* Inline dropzone shows current file (if any) or the new selection */}
                   <InlineFileDropzone
                     selectedFile={form.newFile}
                     currentUrl={form.fileUrl}
@@ -359,8 +439,8 @@ export default function EditContentScreen() {
                       {form.newFile
                         ? "Choose another…"
                         : form.fileUrl
-                        ? "Replace…"
-                        : "Upload…"}
+                          ? "Replace…"
+                          : "Upload…"}
                     </button>
 
                     {form.newFile && (
