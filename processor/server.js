@@ -68,13 +68,13 @@ async function fileExists(filePath) {
 }
 
 app.post("/process-pdf", async (req, res) => {
-  const { hubId, contentId } = req.body || {};
+const { assetId } = req.body || {};
 
-  if (!hubId || !contentId) {
-    return res.status(400).json({ error: "hubId and contentId are required" });
-  }
+if (!assetId) {
+  return res.status(400).json({ error: "assetId is required" });
+}
 
-  const contentRef = firestore.doc(`hubs/${hubId}/content/${contentId}`);
+const contentRef = firestore.doc(`assets/${assetId}`);
 
   let tempRoot;
 
@@ -153,8 +153,7 @@ for (let i = 0; i < renderedFiles.length; i++) {
     pageAspectRatio = dims.height / dims.width;
   }
 
-  const storagePath = `hubs/${hubId}/content/${contentId}/processed/page-${pageNumber}.png`;
-  const file = bucket.file(storagePath);
+const storagePath = `assets/${content.ownerUid}/${assetId}/processed/page-${pageNumber}.png`;  const file = bucket.file(storagePath);
 
   await file.save(pageBuffer, {
     contentType: "image/png",
@@ -176,8 +175,7 @@ for (let i = 0; i < renderedFiles.length; i++) {
   });
 
   if (pageNumber === 1) {
-    const thumbPath = `hubs/${hubId}/content/${contentId}/processed/thumb.png`;
-    const thumbFile = bucket.file(thumbPath);
+const thumbPath = `assets/${content.ownerUid}/${assetId}/processed/thumb.png`;    const thumbFile = bucket.file(thumbPath);
 
     await thumbFile.save(pageBuffer, {
       contentType: "image/png",
@@ -202,14 +200,13 @@ await contentRef.update({
   updatedAt: FieldValue.serverTimestamp(),
 });
 
-    return res.json({
-      ok: true,
-      hubId,
-      contentId,
-      pageCount,
-      thumbnailUrl,
-      previewPagesCount: previewPages.length,
-    });
+return res.json({
+  ok: true,
+  assetId,
+  pageCount: previewPages.length,
+  thumbnailUrl,
+  previewPagesCount: previewPages.length,
+});
   } catch (err) {
     console.error(err);
 

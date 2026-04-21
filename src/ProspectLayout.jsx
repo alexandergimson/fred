@@ -1,14 +1,18 @@
-// ProspectLayout.jsx
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "./lib/firebase";
-import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  onSnapshot,
+  getDocs,
+} from "firebase/firestore";
 import ProspectMetaSidebar from "./ProspectSidebarRight";
-import SideBar from "./ProspectSidebarLeft"; // left list
-import Main from "./ProspectContentViewer"; // center PDF/Image/Embed
+import SideBar from "./ProspectSidebarLeft";
+import Main from "./ProspectContentViewer";
 import "./prospect.css";
 
-// contrast util
 function getContrastColor(hex) {
   if (!hex) return "#fff";
   const c = hex.replace("#", "");
@@ -20,6 +24,7 @@ function getContrastColor(hex) {
 }
 
 const clamp01 = (n) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
+
 const hexToRgb = (hex = "#000000") => {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2) || "00", 16);
@@ -27,6 +32,7 @@ const hexToRgb = (hex = "#000000") => {
   const b = parseInt(h.slice(4, 6) || "00", 16);
   return { r, g, b };
 };
+
 const withAlpha = (hex, alphaPct) => {
   const a = clamp01(alphaPct ?? 100) / 100;
   if (a >= 0.999) return hex || "#000000";
@@ -62,8 +68,9 @@ const cssGradient = (g) => {
   }
 
   if (stops[0].at > 0) stops.unshift({ ...stops[0], at: 0 });
-  if (stops[stops.length - 1].at < 100)
+  if (stops[stops.length - 1].at < 100) {
     stops.push({ ...stops[stops.length - 1], at: 100 });
+  }
 
   const angle = typeof g.angle === "number" ? `${g.angle}deg` : "135deg";
   const parts = stops.map((s) => `${withAlpha(s.color, s.alpha)} ${s.at}%`);
@@ -76,43 +83,97 @@ const bgValue = (
   gradient,
   image,
   fit = "cover",
-  position = "center"
+  position = "center",
 ) => {
   if (mode === "image" && image) {
     const url = typeof image === "string" ? image : image.url;
-    // CSS background shorthand: image URL + position / size + no-repeat
     return `url("${url}") ${position} / ${fit} no-repeat`;
   }
   return mode === "gradient" ? cssGradient(gradient) || solid : solid;
 };
 
+async function loadAssetsForHubItems(hubId) {
+  const itemsSnap = await getDocs(collection(db, "hubs", hubId, "items"));
+
+  const rawItems = itemsSnap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
+
+  rawItems.sort((a, b) => {
+    const pa =
+      typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER;
+    const pb =
+      typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER;
+    return pa - pb;
+  });
+
+  const merged = await Promise.all(
+    rawItems.map(async (item) => {
+      if (!item.assetId) return null;
+
+      const assetSnap = await getDoc(doc(db, "assets", item.assetId));
+      if (!assetSnap.exists()) return null;
+
+      return {
+        id: item.id,
+        hubItemId: item.id,
+        assetId: item.assetId,
+        position: item.position,
+        ...assetSnap.data(),
+      };
+    }),
+  );
+
+  return merged.filter(Boolean);
+}
+
 export default function ProspectLayout() {
-  const { hubId, shareId } = useParams(); // shareId is optional depending on your route
+  const { hubId, shareId } = useParams();
   const [hub, setHub] = useState(null);
   const [items, setItems] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookSize, setBookSize] = useState(null);
 
-  // hub
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       const snap = await getDoc(doc(db, "hubs", hubId));
-      if (!cancelled && snap.exists()) setHub({ id: snap.id, ...snap.data() });
+      if (!cancelled && snap.exists()) {
+        setHub({ id: snap.id, ...snap.data() });
+      }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [hubId]);
 
-  // content list
   useEffect(() => {
-    const colRef = collection(db, "hubs", hubId, "content");
-    const unsub = onSnapshot(colRef, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setItems(list);
-      setLoading(false);
-    });
-    return () => unsub();
+    let cancelled = false;
+
+    const unsub = onSnapshot(
+      collection(db, "hubs", hubId, "items"),
+      async () => {
+        try {
+          const nextItems = await loadAssetsForHubItems(hubId);
+          if (!cancelled) {
+            setItems(nextItems);
+            setLoading(false);
+          }
+        } catch (err) {
+          console.error("Failed to load hub items for prospect", err);
+          if (!cancelled) setLoading(false);
+        }
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [hubId]);
 
   const sortedItems = useMemo(() => {
@@ -121,9 +182,11 @@ export default function ProspectLayout() {
       const pa = typeof a.position === "number" ? a.position : BIG;
       const pb = typeof b.position === "number" ? b.position : BIG;
       if (pa !== pb) return pa - pb;
+
       const ca = a.createdAt?.toMillis?.() ?? 0;
       const cb = b.createdAt?.toMillis?.() ?? 0;
       if (ca !== cb) return cb - ca;
+
       return (a.name || "").localeCompare(b.name || "");
     });
   }, [items]);
@@ -132,20 +195,17 @@ export default function ProspectLayout() {
     if (hub?.name) {
       document.title = `${hub.name} Content Hub`;
     } else {
-      document.title = `Loading...`;
+      document.title = "Loading...";
     }
   }, [hub]);
 
-  // Set favicon based on hub favicon/logo
   useEffect(() => {
-    // Try to find the main favicon link tag
     const link =
       document.querySelector("link[rel='icon']") ||
       document.querySelector("link[rel='shortcut icon']");
 
     if (!link) return;
 
-    // Remember the original href once so we can restore it later
     const originalHref =
       link.getAttribute("data-original-href") ||
       link.getAttribute("href") ||
@@ -156,17 +216,13 @@ export default function ProspectLayout() {
     }
 
     if (hub?.faviconUrl) {
-      // Prefer the dedicated favicon if set
       link.setAttribute("href", hub.faviconUrl);
     } else if (hub?.logoUrl) {
-      // Fallback to the hub logo if no favicon is uploaded
       link.setAttribute("href", hub.logoUrl);
     } else {
-      // Fallback to whatever was originally there
       link.setAttribute("href", originalHref);
     }
 
-    // Optional: restore the original favicon when this component unmounts
     return () => {
       const orig = link.getAttribute("data-original-href") || "/vite.svg";
       link.setAttribute("href", orig);
@@ -174,17 +230,24 @@ export default function ProspectLayout() {
   }, [hub?.faviconUrl, hub?.logoUrl]);
 
   useEffect(() => {
-    if (!activeId && sortedItems.length > 0) setActiveId(sortedItems[0].id);
+    if (!activeId && sortedItems.length > 0) {
+      setActiveId(sortedItems[0].id);
+    } else if (
+      activeId &&
+      sortedItems.length > 0 &&
+      !sortedItems.some((x) => x.id === activeId)
+    ) {
+      setActiveId(sortedItems[0].id);
+    }
   }, [sortedItems, activeId]);
 
   const activeItem = useMemo(
     () => sortedItems.find((x) => x.id === activeId) || null,
-    [sortedItems, activeId]
+    [sortedItems, activeId],
   );
 
   if (loading) return <div className="p-6">Loading…</div>;
 
-  // ---- theme → CSS vars ----
   const t = hub?.prospectTheme || {};
   const primaryFallback = hub?.colors?.primary || "#1F50AF";
 
@@ -193,9 +256,9 @@ export default function ProspectLayout() {
     t.sidebarBgMode || "solid",
     sidebarSolid,
     t.sidebarGradient,
-    t.sidebarBgImage, // NEW
-    t.sidebarBgImageFit || "cover", // NEW
-    t.sidebarBgImagePosition || "center" // NEW
+    t.sidebarBgImage,
+    t.sidebarBgImageFit || "cover",
+    t.sidebarBgImagePosition || "center",
   );
 
   const headerSolid = t.headerBg ?? "#FFFFFF";
@@ -210,26 +273,21 @@ export default function ProspectLayout() {
   const cssVars = {
     "--pv-sidebar-bg": sidebarBg,
     "--pv-sidebar-text": t.sidebarText ?? "#374151",
-    "--pv-sidebar-meta-text": t.rightSidebarText ?? t.sidebarText ?? "#374151", // NEW
+    "--pv-sidebar-meta-text": t.rightSidebarText ?? t.sidebarText ?? "#374151",
     "--pv-logo-bg": t.logoBg ?? "#FFFFFF",
-
     "--pv-header-bg": headerBg,
     "--pv-header-text": t.headerText ?? "#111827",
-
     "--pv-btn-bg": btnBg,
     "--pv-btn-text": btnText,
     "--pv-btn-hover-bg": t.buttonHoverColor,
-
     "--pv-content-bg": contentBg,
-    "--pv-header-height": "5rem", // used as a vertical rhythm unit
-
-    "--brand": t.buttonBg ?? primaryFallback, // base button colour (user-picked)
-    "--brand-hover": t.buttonHoverColor || t.buttonBg || primaryFallback, // hover colour (user-picked) or fallback
+    "--pv-header-height": "5rem",
+    "--brand": t.buttonBg ?? primaryFallback,
+    "--brand-hover": t.buttonHoverColor || t.buttonBg || primaryFallback,
     "--btn-text":
-      t.buttonText ?? getContrastColor(t.buttonBg ?? primaryFallback), // readable text
+      t.buttonText ?? getContrastColor(t.buttonBg ?? primaryFallback),
   };
 
-  // shared width + safeguard for both sidebars
   const sidebarStyle = { width: "16vw", minWidth: "200px" };
 
   return (
@@ -237,7 +295,6 @@ export default function ProspectLayout() {
       className="flex h-screen overflow-hidden page-fade-in"
       style={{ ...cssVars, background: "var(--pv-sidebar-bg)" }}
     >
-      {/* LEFT: list */}
       <SideBar
         logoUrl={hub?.logoUrl}
         items={sortedItems}
@@ -246,7 +303,6 @@ export default function ProspectLayout() {
         style={sidebarStyle}
       />
 
-      {/* CENTER: viewer — fills remaining space */}
       <div
         className="flex-1 min-w-0 mt-1"
         style={{ background: "transparent", width: "100%" }}
@@ -268,7 +324,6 @@ export default function ProspectLayout() {
         </div>
       </div>
 
-      {/* RIGHT: meta sidebar (CTA + names) */}
       <ProspectMetaSidebar
         hub={hub}
         hubTitle={hub?.name || "Hub"}

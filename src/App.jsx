@@ -1,4 +1,3 @@
-// App.jsx
 import "./App.css";
 import {
   BrowserRouter,
@@ -16,15 +15,15 @@ import EditHubScreen from "./EditHubScreen";
 import AuthProvider from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 import SignIn from "./auth/SignIn";
-import HubContentScreen from "./HubContentScreen";
-import CreateContentScreen from "./CreateContentScreen";
-import EditContentScreen from "./EditContentScreen";
 import ProfileScreen from "./UserProfileScreen";
 import HubDesign from "./HubDesign";
 import AnalyticsScreen from "./AnalyticsScreen";
 import HubAnalyticsScreen from "./HubAnalyticsScreen";
+import LibraryScreen from "./LibraryScreen";
+import CreateAssetScreen from "./CreateAssetScreen";
+import EditAssetScreen from "./EditAssetScreen";
+import HubItemsScreen from "./HubItemsScreen";
 
-/** 1) Central, static titles */
 const TITLES = {
   "/signin": "Sign in | Fred",
   "/prospect/:hubId": "Prospect hub | Fred",
@@ -34,49 +33,41 @@ const TITLES = {
   "/admin/profile": "Profile | Fred",
   "/admin/hubs/:hubId/edit": "Edit Details | Fred",
   "/admin/hubs/:hubId/design": "Edit Design | Fred",
-  "/admin/hubs/:hubId/content": "Content | Fred",
-  "/admin/hubs/:hubId/content/new": "New Content | Fred",
-  "/admin/hubs/:hubId/content/:contentId/edit": "Edit Content | Fred",
+  "/admin/hubs/:hubId/items": "Hub Content | Fred",
   "/admin/analytics": "Analytics | Fred",
   "/admin/analytics/hubs/:hubId": "Hub Analytics | Fred",
+  "/admin/library": "Content Library | Fred",
+  "/admin/library/new": "Upload Content | Fred",
+  "/admin/library/:assetId": "Edit Asset | Fred",
 };
 
-/** 2) Minimal normaliser to map dynamic paths to the keys above */
 function useStaticTitle() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Normalise dynamic segments to our map keys
     let key = pathname;
 
     key = key.replace(
-      /^\/admin\/hubs\/[^/]+\/content\/[^/]+\/edit$/,
-      "/admin/hubs/:hubId/content/:contentId/edit"
-    );
-    key = key.replace(
-      /^\/admin\/hubs\/[^/]+\/content\/new$/,
-      "/admin/hubs/:hubId/content/new"
-    );
-    key = key.replace(
-      /^\/admin\/hubs\/[^/]+\/content$/,
-      "/admin/hubs/:hubId/content"
+      /^\/admin\/hubs\/[^/]+\/items$/,
+      "/admin/hubs/:hubId/items",
     );
     key = key.replace(
       /^\/admin\/hubs\/[^/]+\/design$/,
-      "/admin/hubs/:hubId/design"
+      "/admin/hubs/:hubId/design",
     );
     key = key.replace(
       /^\/admin\/hubs\/[^/]+\/edit$/,
-      "/admin/hubs/:hubId/edit"
+      "/admin/hubs/:hubId/edit",
     );
-    key = key.replace(/^\/prospect\/[^/]+$/, "/prospect/:hubId");
-
     key = key.replace(
       /^\/admin\/analytics\/hubs\/[^/]+$/,
-      "/admin/analytics/hubs/:hubId"
+      "/admin/analytics/hubs/:hubId",
     );
+    key = key.replace(/^\/admin\/library\/new$/, "/admin/library/new");
+    key = key.replace(/^\/admin\/library\/[^/]+$/, "/admin/library/:assetId");
+    key = key.replace(/^\/admin\/library$/, "/admin/library");
+    key = key.replace(/^\/prospect\/[^/]+$/, "/prospect/:hubId");
 
-    // Fallbacks for parent/admin index
     if (key === "/admin/" || key === "/admin") key = "/admin";
 
     document.title = TITLES[key] || "Fred";
@@ -84,7 +75,6 @@ function useStaticTitle() {
 }
 
 function App() {
-  /** 3) Set the title for every route change, statically */
   const TitleSetter = () => {
     useStaticTitle();
     return null;
@@ -96,11 +86,8 @@ function App() {
         <TitleSetter />
         <Routes>
           <Route path="/signin" element={<SignIn />} />
-
-          {/* Prospect-facing hub */}
           <Route path="/prospect/:hubId" element={<ProspectLayout />} />
 
-          {/* Admin (protected) */}
           <Route
             path="/admin"
             element={
@@ -109,29 +96,25 @@ function App() {
               </RequireAuth>
             }
           >
-            {/* Admin index */}
             <Route index element={<Navigate to="hubs" replace />} />
-            {/* Global admin pages */}
+
             <Route path="hubs" element={<HubsScreen />} />
+            <Route path="hubs/new" element={<CreateHubScreen />} />
+            <Route path="hubs/:hubId/edit" element={<EditHubScreen />} />
+            <Route path="hubs/:hubId/design" element={<HubDesign />} />
+            <Route path="hubs/:hubId/items" element={<HubItemsScreen />} />
+
+            <Route path="library" element={<LibraryScreen />} />
+            <Route path="library/new" element={<CreateAssetScreen />} />
+            <Route path="library/:assetId" element={<EditAssetScreen />} />
+
             <Route path="analytics" element={<AnalyticsScreen />} />
             <Route
               path="analytics/hubs/:hubId"
               element={<HubAnalyticsScreen />}
             />
 
-            <Route path="hubs/new" element={<CreateHubScreen />} />
             <Route path="profile" element={<ProfileScreen />} />
-            <Route path="hubs/:hubId/edit" element={<EditHubScreen />} />
-            <Route path="hubs/:hubId/design" element={<HubDesign />} />
-            <Route path="hubs/:hubId/content" element={<HubContentScreen />} />
-            <Route
-              path="hubs/:hubId/content/new"
-              element={<CreateContentScreen />}
-            />
-            <Route
-              path="hubs/:hubId/content/:contentId/edit"
-              element={<EditContentScreen />}
-            />
           </Route>
 
           <Route path="*" element={<Navigate to="/admin/hubs" replace />} />

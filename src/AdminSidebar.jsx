@@ -1,4 +1,3 @@
-// AdminSidebar.jsx
 import { NavLink, useLocation, matchPath } from "react-router-dom";
 import { useMemo } from "react";
 import Logo from "./logo";
@@ -9,12 +8,19 @@ import HubOverviewIcon from "./icons/HubOverviewIcon";
 import AddContent from "./icons/AddContent";
 import HubDesignIcon from "./icons/HubDesignIcon";
 
-// logic to handle what items to show
+// Reusing AddContent icon for library until a dedicated library icon exists
+const LibraryIcon = AddContent;
+
 function getItems(hubId) {
   if (!hubId) {
     return [
       { label: "Hubs", to: "/admin/hubs", icon: HubsIcon, exact: true },
-      // make Analytics exact so it doesn't match /admin/analytics/hubs/...
+      {
+        label: "Content Library",
+        to: "/admin/library",
+        icon: LibraryIcon,
+        exact: true,
+      },
       {
         label: "Analytics",
         to: "/admin/analytics",
@@ -23,15 +29,21 @@ function getItems(hubId) {
       },
     ];
   }
+
   return [
     { label: "Hubs", to: "/admin/hubs", icon: HubsIcon, exact: true },
+    {
+      label: "Content Library",
+      to: "/admin/library",
+      icon: LibraryIcon,
+      exact: true,
+    },
     {
       label: "Analytics",
       to: `/admin/analytics`,
       icon: AnalyticsIcon,
-      exact: true, // 👈 exact match here too
+      exact: true,
     },
-    // --- INSERTED SEPARATOR MARKER ---
     { type: "separator", key: "hub-section" },
     {
       label: "Hub Details",
@@ -40,7 +52,7 @@ function getItems(hubId) {
     },
     {
       label: "Hub Content",
-      to: `/admin/hubs/${hubId}/content`,
+      to: `/admin/hubs/${hubId}/items`,
       icon: AddContent,
     },
     {
@@ -66,7 +78,7 @@ function SidebarItem({ to, icon: Icon, label, exact }) {
   return (
     <NavLink
       to={to}
-      end={!!exact} // exact match for items like /admin/hubs and /admin/analytics
+      end={!!exact}
       className={({ isActive }) =>
         `${baseLinkClasses} ${isActive ? activeClasses : inactiveClasses}`
       }
@@ -80,12 +92,12 @@ function SidebarItem({ to, icon: Icon, label, exact }) {
 const AdminSidebar = () => {
   const { pathname } = useLocation();
 
-  // Extract hubId via router-aware matching
   const hubId = useMemo(() => {
     const match = [
       matchPath({ path: "/admin/hubs/:hubId/*" }, pathname),
       matchPath({ path: "/admin/analytics/hubs/:hubId" }, pathname),
     ].find((m) => m !== null);
+
     return match?.params?.hubId ?? null;
   }, [pathname]);
 
@@ -96,12 +108,10 @@ const AdminSidebar = () => {
       className="h-screen w-60 flex flex-col bg-white overflow-hidden"
       aria-label="Admin navigation"
     >
-      {/* Top logo */}
       <div className="flex items-center justify-center mt-8 mb-8 shrink-0">
         <Logo className="w-40 h-8" />
       </div>
 
-      {/* Divider */}
       <div
         className="flex items-center justify-center shrink-0"
         role="separator"
@@ -110,7 +120,6 @@ const AdminSidebar = () => {
         <hr className="w-40 h-0.5 border-t-0 bg-gray-100" />
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 min-h-0 overflow-y-auto mt-8 scrollbar-thin">
         <ul className="flex flex-col items-center">
           {items.map((item) => {
@@ -131,6 +140,7 @@ const AdminSidebar = () => {
                 </li>
               );
             }
+
             const { to, icon, label, exact } = item;
             return (
               <li key={to}>
@@ -141,7 +151,6 @@ const AdminSidebar = () => {
         </ul>
       </nav>
 
-      {/* User footer */}
       <SidebarUserFooter />
     </aside>
   );

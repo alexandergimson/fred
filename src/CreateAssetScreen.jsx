@@ -1,19 +1,14 @@
-// CreateContentScreen.jsx
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import HubScreenHeader from "./HubScreenHeader";
 import SaveIcon from "./icons/SaveIcon";
-import { db, storage, auth } from "./lib/firebase";
 import {
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+  createEmbedAsset,
+  createFileAsset,
+  isImageFile,
+  isPdfFile,
+} from "./lib/assets";
 
-/** Small UI */
 function Field({ label, children }) {
   return (
     <label className="block">
@@ -23,40 +18,6 @@ function Field({ label, children }) {
   );
 }
 
-/** Helpers */
-function isImageFile(file) {
-  return (file?.type || "").startsWith("image/");
-}
-function isPdfFile(file) {
-  const t = file?.type || "";
-  return t === "application/pdf" || /\.pdf$/i.test(file?.name || "");
-}
-
-function buildPdfProcessingFields(file, path) {
-  if (!isPdfFile(file)) {
-    return {
-      processingStatus: null,
-      thumbnailUrl: null,
-      pageCount: null,
-      pageAspectRatio: null,
-      previewPages: [],
-      originalFilePath: path,
-      fileMimeType: file?.type || null,
-    };
-  }
-
-  return {
-    processingStatus: "pending",
-    thumbnailUrl: null,
-    pageCount: null,
-    pageAspectRatio: null,
-    previewPages: [],
-    originalFilePath: path,
-    fileMimeType: file?.type || "application/pdf",
-  };
-}
-
-/** Inline dropzone (PDFs or images) */
 function InlineFileDropzone({
   selectedFile,
   onPick,
@@ -91,43 +52,6 @@ function InlineFileDropzone({
     if (!validate(file)) return;
     onPick?.(file);
   }
-
-  const inner = (() => {
-    if (selectedFile) {
-      const img = isImageFile(selectedFile);
-      return (
-        <div className="flex items-center gap-3 px-4">
-          {img ? (
-            <img
-              src={URL.createObjectURL(selectedFile)}
-              alt="Preview"
-              className="h-16 w-16 object-contain rounded border border-gray-200 bg-white"
-            />
-          ) : (
-            <div className="h-16 w-16 grid place-items-center rounded border border-gray-200 bg-white text-gray-500">
-              PDF
-            </div>
-          )}
-          <div className="text-sm">
-            <div className="font-medium text-gray-800 truncate max-w-[220px]">
-              {selectedFile.name}
-            </div>
-            <div className="text-gray-500">
-              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="text-sm text-gray-600 text-center px-4">
-        <div className="font-medium text-gray-700">Upload a PDF or image</div>
-        <div className="text-gray-500">
-          Click to choose or drag & drop (Max 16MB)
-        </div>
-      </div>
-    );
-  })();
 
   return (
     <div className="w-full">
@@ -167,129 +91,86 @@ function InlineFileDropzone({
             : "border-gray-300 bg-gray-50",
           "cursor-pointer",
         ].join(" ")}
-        title="Click to upload or drag & drop"
       >
-        {inner}
+        {selectedFile ? (
+          <div className="text-center px-4">
+            <div className="font-medium text-gray-800">{selectedFile.name}</div>
+            <div className="text-sm text-gray-500">
+              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 text-center px-4">
+            <div className="font-medium text-gray-700">
+              Upload a PDF or image
+            </div>
+            <div className="text-gray-500">
+              Click to choose or drag & drop (Max 16MB)
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default function CreateContentScreen() {
-  const { hubId } = useParams();
+export default function CreateAssetScreen() {
   const navigate = useNavigate();
+  const openPickerRef = useRef(null);
 
   const [form, setForm] = useState({
     name: "",
-    kind: "embed",
+    kind: "file",
     embedUrl: "",
     newFile: null,
+    tags: "",
   });
 
-  const openPickerRef = useRef(null);
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   async function save() {
     try {
-      if (!auth.currentUser) {
-        alert("Please sign in");
-        return;
-      }
+      const tags = (form.tags || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
 
-      const name = (form.name || "").trim();
-      if (!name) {
+      if (!(form.name || "").trim()) {
         alert("Please enter a name");
         return;
       }
 
-      const colRef = collection(db, "hubs", hubId, "content");
-      const docRef = doc(colRef);
-      const contentId = docRef.id;
-
-      const base = {
-        name,
-        kind: form.kind,
-        embedUrl: form.kind === "embed" ? (form.embedUrl || "").trim() : null,
-        fileUrl: null,
-
-        processingStatus: null,
-        thumbnailUrl: null,
-        pageCount: null,
-        pageAspectRatio: null,
-        previewPages: [],
-        originalFilePath: null,
-        fileMimeType: null,
-
-        position: Date.now(),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
       if (form.kind === "embed") {
-        if (!base.embedUrl) {
+        if (!(form.embedUrl || "").trim()) {
           alert("Please enter an embed URL");
           return;
         }
-        await setDoc(docRef, base);
-        navigate(`/admin/hubs/${hubId}/content`);
+
+        await createEmbedAsset({
+          name: form.name,
+          embedUrl: form.embedUrl,
+          tags,
+        });
+
+        navigate("/admin/library");
         return;
       }
 
-      const f = form.newFile;
-      if (!f) {
+      if (!form.newFile) {
         alert("Please choose a file to upload");
         return;
       }
-      if (!(isPdfFile(f) || isImageFile(f))) {
-        alert("Please upload a PDF or image file.");
-        return;
-      }
 
-      await setDoc(docRef, base);
-
-      const versionedName = `${Date.now()}-${f.name}`;
-      const path = `hubs/${hubId}/content/${contentId}/${versionedName}`;
-      const fileRef = ref(storage, path);
-      const metadata = {
-        contentType:
-          f.type ||
-          (isPdfFile(f) ? "application/pdf" : "application/octet-stream"),
-        cacheControl: "public,max-age=31536000,immutable",
-      };
-
-      const task = uploadBytesResumable(fileRef, f, metadata);
-      await new Promise((resolve, reject) => {
-        task.on("state_changed", null, reject, resolve);
+      await createFileAsset({
+        name: form.name,
+        file: form.newFile,
+        tags,
       });
 
-      const fileUrl = await getDownloadURL(fileRef);
-
-      await updateDoc(docRef, {
-        fileUrl,
-        ...buildPdfProcessingFields(f, path),
-        updatedAt: serverTimestamp(),
-      });
-      if (isPdfFile(f)) {
-        fetch(
-          "https://fred-pdf-processor-867347292100.europe-west2.run.app/process-pdf",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              hubId,
-              contentId,
-            }),
-          },
-        ).catch((err) => {
-          console.error("Failed to start PDF processing", err);
-        });
-      }
-      navigate(`/admin/hubs/${hubId}/content`);
+      navigate("/admin/library");
     } catch (e) {
       console.error(e);
-      alert("Failed to add content");
+      alert("Failed to create asset");
     }
   }
 
@@ -298,9 +179,9 @@ export default function CreateContentScreen() {
       <div className="flex-1 p-6">
         <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <HubScreenHeader
-            title="Add content"
+            title="Upload content"
             action={{
-              label: "Save content",
+              label: "Save asset",
               onClick: save,
               icon: <SaveIcon className="w-5 h-5" />,
             }}
@@ -322,9 +203,17 @@ export default function CreateContentScreen() {
                   value={form.kind}
                   onChange={(e) => update({ kind: e.target.value })}
                 >
-                  <option value="embed">Embed</option>
                   <option value="file">File</option>
+                  <option value="embed">Embed</option>
                 </select>
+              </Field>
+
+              <Field label="Tags (comma separated)">
+                <input
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1F50AF]"
+                  value={form.tags}
+                  onChange={(e) => update({ tags: e.target.value })}
+                />
               </Field>
 
               {form.kind === "embed" ? (
