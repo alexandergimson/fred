@@ -12,6 +12,12 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
+import { deleteDoc } from "firebase/firestore";
+
+export async function deleteAsset(assetId) {
+  await deleteDoc(doc(db, "assets", assetId));
+}
+
 function isImageFile(file) {
   return (file?.type || "").startsWith("image/");
 }
@@ -45,35 +51,42 @@ function buildPdfProcessingFields(file, path) {
   };
 }
 
-export function subscribeToAssets(callback) {
-const qy = query(
-  collection(db, "assets"),
-  where("ownerUid", "==", auth.currentUser?.uid || "__none__"),
-);
+export function subscribeToAssets(callback, onError) {
+  const qy = query(
+    collection(db, "assets"),
+    where("ownerUid", "==", auth.currentUser?.uid || "__none__"),
+  );
 
-return onSnapshot(
-  qy,
-  (snap) => {
-    const items = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
+  return onSnapshot(
+    qy,
+    (snap) => {
+      const items = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
 
-    items.sort((a, b) => {
-      const ta = a.createdAt?.toMillis?.() ?? 0;
-      const tb = b.createdAt?.toMillis?.() ?? 0;
-      return tb - ta;
-    });
+      items.sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? 0;
+        return tb - ta;
+      });
 
-    callback(items);
-  },
-  (error) => {
-    console.error("subscribeToAssets failed", error);
-  },
-);
+      callback(items);
+    },
+    (error) => {
+      console.error("subscribeToAssets failed", error);
+      onError?.(error);
+    },
+  );
 }
 
-export async function createEmbedAsset({ name, embedUrl, tags = [] }) {
+export async function createEmbedAsset({
+  name,
+  description = "",
+  embedUrl,
+  tags = [],
+  category = "",
+}) {
   if (!auth.currentUser) throw new Error("Not signed in");
 
   const docRef = doc(collection(db, "assets"));
@@ -81,10 +94,11 @@ export async function createEmbedAsset({ name, embedUrl, tags = [] }) {
   await setDoc(docRef, {
     ownerUid: auth.currentUser.uid,
     name: (name || "").trim(),
+    description: (description || "").trim() || null,
+    category: (category || "").trim() || null,
     kind: "embed",
     embedUrl: (embedUrl || "").trim(),
     fileUrl: null,
-
     processingStatus: null,
     thumbnailUrl: null,
     pageCount: null,
@@ -121,7 +135,13 @@ export async function updateAsset(assetId, patch) {
   });
 }
 
-export async function createFileAsset({ name, file, tags = [] }) {
+export async function createFileAsset({
+  name,
+  description = "",
+  file,
+  tags = [],
+  category = "",
+}) {
   if (!auth.currentUser) throw new Error("Not signed in");
   if (!file) throw new Error("No file provided");
 
@@ -131,6 +151,8 @@ export async function createFileAsset({ name, file, tags = [] }) {
   const base = {
     ownerUid: auth.currentUser.uid,
     name: (name || "").trim(),
+    description: (description || "").trim() || null,
+    category: (category || "").trim() || null,
     kind: "file",
     embedUrl: null,
     fileUrl: null,
@@ -175,30 +197,33 @@ export async function createFileAsset({ name, file, tags = [] }) {
     updatedAt: serverTimestamp(),
   });
 
-if (isPdfFile(file)) {
-  fetch("https://fred-pdf-processor-867347292100.europe-west2.run.app/process-pdf", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      assetId,
-    }),
-  })
-    .then(async (res) => {
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Processor failed: ${res.status} ${text}`);
-      }
-      return res.json();
-    })
-    .then((data) => {
-      console.log("Asset PDF processor started:", data);
-    })
-    .catch((err) => {
-      console.error("Failed to start PDF processing", err);
-    });
-}
+  if (isPdfFile(file)) {
+    fetch(
+      "https://fred-pdf-processor-867347292100.europe-west2.run.app/process-pdf",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          assetId,
+        }),
+      },
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Processor failed: ${res.status} ${text}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Asset PDF processor started:", data);
+      })
+      .catch((err) => {
+        console.error("Failed to start PDF processing", err);
+      });
+  }
 
   return assetId;
 }

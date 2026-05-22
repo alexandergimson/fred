@@ -62,7 +62,7 @@ export default function SidebarUserFooter() {
 
   const name = useMemo(
     () => profile?.name || authUser?.displayName || "",
-    [profile, authUser]
+    [profile, authUser],
   );
   const email = authUser?.email || "";
   const avatarSrc = profile?.photoDataUrl || authUser?.photoURL || null;
@@ -79,11 +79,10 @@ export default function SidebarUserFooter() {
   }
 
   return (
-    <div className="mt-auto p-4 border-t border-gray-200">
-      <div className="relative flex items-end justify-between">
-        {/* Left cluster: avatar, text, trigger */}
-        <div className="flex flex-row items-center gap-3">
-          <div className="h-6 w-6 rounded-md bg-gray-100 ring-1 ring-gray-200 overflow-hidden">
+    <div className="mt-auto border-t border-gray-100 p-3">
+      <div className="relative flex items-center justify-between">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="h-7 w-7 shrink-0 rounded-full bg-gray-100 ring-1 ring-gray-200 overflow-hidden">
             {avatarSrc ? (
               <img
                 src={avatarSrc}
@@ -91,57 +90,52 @@ export default function SidebarUserFooter() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-gray-500 text-sm font-medium">
+              <div className="h-full w-full flex items-center justify-center text-gray-500 text-xs font-medium">
                 {initialsFromEmail(email)}
               </div>
             )}
           </div>
 
-          <div className="text-left">
-            <div className="text-sm font-semibold text-gray-900 leading-tight">
+          <div className="min-w-0 text-left">
+            <div className="max-w-[120px] truncate text-sm font-medium leading-tight text-gray-900">
               {name || "Your name"}
             </div>
-            <div className="text-xs text-gray-500 leading-tight max-w-[180px] truncate">
+            <div className="max-w-[120px] truncate text-xs leading-tight text-gray-500">
               {email || "you@example.com"}
             </div>
           </div>
 
-          {/* Trigger + Menu are wrapped to anchor the popup to the button */}
-          <div ref={popoverRef} className="relative">
+          <div ref={popoverRef} className="relative ml-auto">
             <button
               type="button"
               aria-haspopup="menu"
               aria-expanded={open}
               aria-controls="account-menu"
               onClick={() => setOpen((v) => !v)}
-              className="flex flex-col items-center justify-center gap-0.5 w-9 h-14 rounded-xl text-gray-700 hover:opacity-90 cursor-pointer"
+              className="flex h-8 w-8 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               title="Account menu"
             >
               <ChevronUp
-                className={`w-4 h-4 transition-transform ${
+                className={`w-3.5 h-3.5 transition-transform ${
                   open ? "-translate-y-0.5" : "translate-y-0"
                 }`}
               />
               <ChevronDown
-                className={`w-4 h-4 -mt-1 transition-transform ${
+                className={`w-3.5 h-3.5 -mt-1 transition-transform ${
                   open ? "translate-y-0.5" : "translate-y-0"
                 }`}
               />
             </button>
 
-            {/* Dropdown: anchored to button, expands from bottom-right, upwards */}
             <div
               id="account-menu"
               role="menu"
               aria-hidden={!open}
               className={[
-                // positioning: attach to bottom-right of trigger
                 "absolute right-0 bottom-full mb-2 w-48",
-                // box + background
-                "rounded-xl border border-gray-200 bg-white py-2 shadow-lg",
-                // animation/morph: scale on Y from bottom-right (upwards), tiny X easing too
+                "rounded-lg border border-gray-200 bg-white py-1.5 shadow-lg",
                 "origin-bottom-right transform-gpu",
-                "transition-[opacity,transform] duration-1000 ease-out",
+                "transition-[opacity,transform] duration-150 ease-out",
                 open
                   ? "opacity-100 scale-y-100 scale-x-100"
                   : "opacity-0 scale-y-0 scale-x-95 pointer-events-none",
@@ -153,21 +147,20 @@ export default function SidebarUserFooter() {
                   setOpen(false);
                   nav("/admin/profile");
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                className="w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
               >
                 Profile settings
               </button>
               <button
                 role="menuitem"
                 onClick={handleSignOut}
-                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                className="w-full cursor-pointer px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
               >
                 Sign out
               </button>
             </div>
           </div>
         </div>
-        {/* /Left cluster */}
       </div>
     </div>
   );

@@ -16,13 +16,14 @@ import AuthProvider from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 import SignIn from "./auth/SignIn";
 import ProfileScreen from "./UserProfileScreen";
-import HubDesign from "./HubDesign";
 import AnalyticsScreen from "./AnalyticsScreen";
 import HubAnalyticsScreen from "./HubAnalyticsScreen";
 import LibraryScreen from "./LibraryScreen";
 import CreateAssetScreen from "./CreateAssetScreen";
 import EditAssetScreen from "./EditAssetScreen";
 import HubItemsScreen from "./HubItemsScreen";
+import HubBuilder from "./HubBuilder";
+import ProspectLayoutV2 from "./ProspectLayoutV2";
 
 const TITLES = {
   "/signin": "Sign in | Fred",
@@ -34,11 +35,13 @@ const TITLES = {
   "/admin/hubs/:hubId/edit": "Edit Details | Fred",
   "/admin/hubs/:hubId/design": "Edit Design | Fred",
   "/admin/hubs/:hubId/items": "Hub Content | Fred",
+  "/admin/hubs/:hubId/builder": "Hub Builder | Fred",
   "/admin/analytics": "Analytics | Fred",
   "/admin/analytics/hubs/:hubId": "Hub Analytics | Fred",
   "/admin/library": "Content Library | Fred",
   "/admin/library/new": "Upload Content | Fred",
   "/admin/library/:assetId": "Edit Asset | Fred",
+  "/prospect-v2/:hubId": "Prospect hub preview | Fred",
 };
 
 function useStaticTitle() {
@@ -48,13 +51,14 @@ function useStaticTitle() {
     let key = pathname;
 
     key = key.replace(
+      /^\/admin\/hubs\/[^/]+\/builder$/,
+      "/admin/hubs/:hubId/builder",
+    );
+    key = key.replace(
       /^\/admin\/hubs\/[^/]+\/items$/,
       "/admin/hubs/:hubId/items",
     );
-    key = key.replace(
-      /^\/admin\/hubs\/[^/]+\/design$/,
-      "/admin/hubs/:hubId/design",
-    );
+
     key = key.replace(
       /^\/admin\/hubs\/[^/]+\/edit$/,
       "/admin/hubs/:hubId/edit",
@@ -67,6 +71,7 @@ function useStaticTitle() {
     key = key.replace(/^\/admin\/library\/[^/]+$/, "/admin/library/:assetId");
     key = key.replace(/^\/admin\/library$/, "/admin/library");
     key = key.replace(/^\/prospect\/[^/]+$/, "/prospect/:hubId");
+    key = key.replace(/^\/prospect-v2\/[^/]+$/, "/prospect-v2/:hubId");
 
     if (key === "/admin/" || key === "/admin") key = "/admin";
 
@@ -84,9 +89,19 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <TitleSetter />
+
         <Routes>
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/prospect/:hubId" element={<ProspectLayout />} />
+          <Route path="/prospect/:hubId" element={<ProspectLayoutV2 />} />
+
+          <Route
+            path="/admin/hubs/:hubId/builder"
+            element={
+              <RequireAuth>
+                <HubBuilder />
+              </RequireAuth>
+            }
+          />
 
           <Route
             path="/admin"
@@ -101,7 +116,6 @@ function App() {
             <Route path="hubs" element={<HubsScreen />} />
             <Route path="hubs/new" element={<CreateHubScreen />} />
             <Route path="hubs/:hubId/edit" element={<EditHubScreen />} />
-            <Route path="hubs/:hubId/design" element={<HubDesign />} />
             <Route path="hubs/:hubId/items" element={<HubItemsScreen />} />
 
             <Route path="library" element={<LibraryScreen />} />

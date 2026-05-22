@@ -11,9 +11,7 @@ export default function HubScreenHeader({
   className = "",
 }) {
   return (
-    <header
-      className={`py-4 ml-8 mr-8 flex items-center justify-between ${className}`}
-    >
+    <header className={`py-4 flex items-center justify-between ${className}`}>
       <div className="flex items-center gap-4">
         <span className="text-xl font-semibold tracking-wide uppercase text-[#1F50AF] font-display">
           {title}

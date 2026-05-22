@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import HubScreenHeader from "./HubScreenHeader";
 import { useNavigate } from "react-router-dom";
-import ThemePreview from "./ThemePreview";
 
 import { db, storage, auth } from "./lib/firebase";
 import {
@@ -12,33 +11,15 @@ import {
   doc,
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
-/* shared theme bits */
-import ColorInput from "./theme/ColorInput";
-import BgField from "./theme/BgField";
+import SaveIcon from "./icons/SaveIcon";
+import {
+  AdminPage,
+  AdminPageContent,
+  AdminPageHeader,
+} from "./components/admin/AdminPage";
+import { FormField, TextInput } from "./components/admin/FormControls";
+import SettingsCard from "./components/admin/SettingsCard";
 import { defaultProspectTheme } from "./theme/defaults";
-
-/* ---------- small UI helpers ---------- */
-function Field({ label, required, children }) {
-  return (
-    <label className="block">
-      <span className="text-sm text-gray-600">
-        {label} {required && <span className="text-red-500">*</span>}
-      </span>
-      <div className="mt-1">{children}</div>
-    </label>
-  );
-}
-function TextInput(props) {
-  return (
-    <input
-      {...props}
-      className={`w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1F50AF] ${
-        props.className || ""
-      }`}
-    />
-  );
-}
 
 /* ---------- helpers (inline dropzone bits) ---------- */
 function isImageFile(file) {
@@ -87,10 +68,10 @@ function InlineImageDropzone({
           <img
             src={URL.createObjectURL(selectedFile)}
             alt="Logo preview"
-            className="h-14 object-contain"
+            className="h-14 max-w-[180px] object-contain"
           />
           <div className="text-sm">
-            <div className="font-medium text-gray-800 truncate max-w-[220px]">
+            <div className="max-w-[220px] truncate font-medium text-gray-900">
               {selectedFile.name}
             </div>
             <div className="text-gray-500">
@@ -101,8 +82,8 @@ function InlineImageDropzone({
       );
     }
     return (
-      <div className="text-sm text-gray-600 text-center px-4">
-        <div className="font-medium text-gray-700">Upload a logo</div>
+      <div className="px-4 text-center text-sm text-gray-500">
+        <div className="font-medium text-gray-900">Upload a logo</div>
         <div className="text-gray-500">
           Click to choose or drag & drop (PNG, JPG, SVG, WebP — Max 8MB)
         </div>
@@ -142,11 +123,10 @@ function InlineImageDropzone({
           handleFile(f);
         }}
         className={[
-          "flex h-40 w-full items-center justify-center rounded-lg border-2 border-dashed transition-colors",
+          "flex h-40 w-full cursor-pointer items-center justify-center rounded-md border border-dashed transition-colors",
           dragOver
-            ? "border-[#1F50AF] bg-[#1F50AF]/5"
-            : "border-gray-300 bg-white",
-          "cursor-pointer",
+            ? "border-[#1F50AF] bg-background"
+            : "border-gray-300 bg-gray-50",
         ].join(" ")}
         title="Click to upload or drag & drop"
       >
@@ -227,65 +207,82 @@ export default function CreateHubScreen() {
     form.logo && typeof form.logo === "object" ? form.logo.file : null;
 
   return (
-    <main className="flex-1 h-screen bg-[#F4F7FE] overflow-hidden flex flex-col page-fade-in">
-      <div className="flex-1 p-6">
-        <div className="h-full bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-          <HubScreenHeader
-            title="New Hub"
-            action={{ label: "Save hub", onClick: save }}
-          />
+    <AdminPage>
+      <AdminPageHeader>
+        <HubScreenHeader
+          title="New Hub"
+          action={{
+            label: "Save hub",
+            onClick: save,
+            icon: <SaveIcon className="h-5 w-5" />,
+          }}
+        />
+      </AdminPageHeader>
 
-          <div className="flex-1 overflow-auto ml-8 mr-8 pb-4">
-            <div className="space-y-10 max-w-screen-2xl mx-auto">
-              {/* Top row: left inputs, right inline logo upload */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div className="lg:col-span-1 grid grid-cols-1 gap-4">
-                  <Field label="Hub Name" required>
-                    <TextInput
-                      value={form.name}
-                      onChange={(e) => update("name", e.target.value)}
-                      placeholder="e.g. Coca-Cola"
-                    />
-                  </Field>
-                  <Field label="Contact Us link">
-                    <TextInput
-                      type="url"
-                      value={form.contactLink || ""}
-                      onChange={(e) => update("contactLink", e.target.value)}
-                      placeholder="https://example.com/contact"
-                    />
-                  </Field>
-                </div>
+      <AdminPageContent>
+        <div className="mx-auto grid max-w-[1450px] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <SettingsCard
+            id="hub-details"
+            title="Hub details"
+            description="Name the hub and add the contact destination prospects can use."
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <FormField label="Hub name" required>
+                <TextInput
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="e.g. Coca-Cola"
+                />
+              </FormField>
 
-                {/* Right: inline logo dropzone + controls */}
-                <div className="lg:col-span-1">
-                  <div className="mb-2 text-sm text-gray-600">Logo</div>
-
-                  <InlineImageDropzone
-                    selectedFile={previewFile}
-                    onPick={(file) =>
-                      update("logo", { file, url: URL.createObjectURL(file) })
-                    }
-                    accept="image/*"
-                    maxBytes={8 * 1024 * 1024}
-                    triggerRef={openPickerRef}
-                  />
-
-                  <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <button
-                      type="button"
-                      className="UserPrimaryCta w-auto px-4"
-                      onClick={() => openPickerRef.current?.()}
-                    >
-                      {previewFile ? "Choose another…" : "Upload…"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <FormField label="Contact Us link">
+                <TextInput
+                  type="url"
+                  value={form.contactLink || ""}
+                  onChange={(e) => update("contactLink", e.target.value)}
+                  placeholder="https://example.com/contact"
+                />
+              </FormField>
             </div>
-          </div>
+          </SettingsCard>
+
+          <SettingsCard
+            id="branding"
+            title="Branding"
+            description="Upload a logo to show in the prospect experience and hub list."
+          >
+            <InlineImageDropzone
+              selectedFile={previewFile}
+              onPick={(file) =>
+                update("logo", { file, url: URL.createObjectURL(file) })
+              }
+              accept="image/*"
+              maxBytes={8 * 1024 * 1024}
+              triggerRef={openPickerRef}
+            />
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="h-10 transform-gpu cursor-pointer rounded-lg border border-transparent bg-primary px-4 text-sm font-medium text-white shadow-sm transition-all duration-[600ms] ease-out hover:-translate-y-[2px] hover:border-primary hover:bg-background hover:text-primary hover:shadow-md"
+                onClick={() => openPickerRef.current?.()}
+              >
+                {previewFile ? "Choose another" : "Upload logo"}
+              </button>
+
+              {previewFile ? (
+                <button
+                  type="button"
+                  className="h-10 transform-gpu cursor-pointer rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition-all duration-[600ms] ease-out hover:-translate-y-[2px] hover:bg-red-50 hover:shadow-md"
+                  onClick={() => update("logo", null)}
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          </SettingsCard>
         </div>
-      </div>
-    </main>
+      </AdminPageContent>
+    </AdminPage>
   );
 }

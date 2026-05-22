@@ -9,6 +9,8 @@ import {
   serverTimestamp,
   setDoc,
   deleteDoc,
+  writeBatch,
+  updateDoc,
 } from "firebase/firestore";
 
 export async function listHubItems(hubId) {
@@ -63,6 +65,8 @@ export async function addAssetsToHub(hubId, assetIds) {
 
     const itemRef = doc(collection(db, "hubs", hubId, "items"));
     await setDoc(itemRef, {
+      guided: true,
+      featured: false,
       assetId,
       position: nextPosition++,
       createdAt: serverTimestamp(),
@@ -71,6 +75,27 @@ export async function addAssetsToHub(hubId, assetIds) {
   }
 }
 
+export async function reorderHubItems(hubId, items) {
+  const batch = writeBatch(db);
+
+  items.forEach((item, index) => {
+    const ref = doc(db, "hubs", hubId, "items", item.id);
+    batch.update(ref, {
+      position: index * 100,
+      updatedAt: serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+}
+
 export async function removeHubItem(hubId, itemId) {
   await deleteDoc(doc(db, "hubs", hubId, "items", itemId));
+}
+
+export async function updateHubItem(hubId, itemId, patch) {
+  await updateDoc(doc(db, "hubs", hubId, "items", itemId), {
+    ...patch,
+    updatedAt: serverTimestamp(),
+  });
 }
