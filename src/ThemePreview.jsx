@@ -1,4 +1,4 @@
-// ThemePreview.jsx — unified background like Prospect view (CSS-driven buttons/nav)
+// ThemePreview.jsx — simplified brand preview for Hub Design
 import { Twitter, Linkedin, Facebook, Instagram } from "./icons";
 
 const FALLBACK_THEME = {
@@ -16,107 +16,103 @@ const FALLBACK_THEME = {
     ],
   },
   sidebarText: "#374151",
-  logoBg: "#FFFFFF",
-  headerBgMode: "solid",
-  headerBg: "#FFFFFF",
-  headerGradient: {
-    angle: 135,
-    stops: [
-      { color: "#FFFFFF", at: 0 },
-      { color: "#F3F4F6", at: 100 },
-    ],
-  },
-  headerText: "#111827",
+  rightSidebarText: "#374151",
+
   buttonBg: "#1F50AF",
   buttonText: "#FFFFFF",
   buttonHoverColor: "#1F50AF",
-  contentBgMode: "solid",
-  contentBg: "#FFFFFF",
-  contentGradient: {
-    angle: 135,
-    stops: [
-      { color: "#FFFFFF", at: 0 },
-      { color: "#F9FAFB", at: 100 },
-    ],
-  },
 };
 
 const clamp01 = (n) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
+
 const hexToRgb = (hex = "#000000") => {
   const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2) || "00", 16);
-  const g = parseInt(h.slice(2, 4) || "00", 16);
-  const b = parseInt(h.slice(4, 6) || "00", 16);
-  return { r, g, b };
+  return {
+    r: parseInt(h.slice(0, 2) || "00", 16),
+    g: parseInt(h.slice(2, 4) || "00", 16),
+    b: parseInt(h.slice(4, 6) || "00", 16),
+  };
 };
+
 const withAlpha = (hex, alphaPct) => {
   const a = clamp01(alphaPct ?? 100) / 100;
   if (a >= 0.999) return hex || "#000000";
+
   const { r, g, b } = hexToRgb(hex || "#000000");
   return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
 };
 
-const cssGradient = (g) => {
-  if (!g || !Array.isArray(g.stops) || g.stops.length === 0) return null;
+const cssGradient = (gradient) => {
+  if (
+    !gradient ||
+    !Array.isArray(gradient.stops) ||
+    gradient.stops.length === 0
+  ) {
+    return null;
+  }
 
-  let stops = g.stops
-    .filter((s) => s && s.color)
-    .map((s, i) => ({
-      color: s.color,
-      alpha: clamp01(s.alpha ?? 100),
+  let stops = gradient.stops
+    .filter((stop) => stop && stop.color)
+    .map((stop, index) => ({
+      color: stop.color,
+      alpha: clamp01(stop.alpha ?? 100),
       at:
-        s.at == null
-          ? g.stops.length === 1
-            ? i
+        stop.at == null
+          ? gradient.stops.length === 1
+            ? index
               ? 100
               : 0
-            : Math.round((i / (g.stops.length - 1)) * 100)
-          : clamp01(s.at),
+            : Math.round((index / (gradient.stops.length - 1)) * 100)
+          : clamp01(stop.at),
     }))
     .sort((a, b) => a.at - b.at);
 
   if (stops.length === 1) {
-    const s = stops[0];
+    const only = stops[0];
     stops = [
-      { ...s, at: 0 },
-      { ...s, at: 100 },
+      { ...only, at: 0 },
+      { ...only, at: 100 },
     ];
   }
 
   if (stops[0].at > 0) stops.unshift({ ...stops[0], at: 0 });
-  if (stops[stops.length - 1].at < 100)
+  if (stops[stops.length - 1].at < 100) {
     stops.push({ ...stops[stops.length - 1], at: 100 });
-
-  const angle = typeof g.angle === "number" ? `${g.angle}deg` : "135deg";
-  const parts = stops.map((s) => `${withAlpha(s.color, s.alpha)} ${s.at}%`);
-  return `linear-gradient(${angle}, ${parts.join(", ")})`;
-};
-
-const bgVal = (
-  mode,
-  solid,
-  gradient,
-  image,
-  fit = "cover",
-  position = "center"
-) => {
-  if (mode === "image" && image) {
-    const url = typeof image === "string" ? image : image.url;
-    return `url("${url}") ${position} / ${fit} no-repeat`;
   }
-  return mode === "gradient" ? cssGradient(gradient) || solid : solid;
+
+  const angle =
+    typeof gradient.angle === "number" ? `${gradient.angle}deg` : "135deg";
+
+  return `linear-gradient(${angle}, ${stops
+    .map((stop) => `${withAlpha(stop.color, stop.alpha)} ${stop.at}%`)
+    .join(", ")})`;
 };
 
-function getContrastColor(hex) {
-  if (!hex || typeof hex !== "string") return "#fff";
-  const c = hex.replace("#", "");
-  if (c.length !== 6) return "#fff";
-  const r = parseInt(c.slice(0, 2), 16);
-  const g = parseInt(c.slice(2, 4), 16);
-  const b = parseInt(c.slice(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "#000" : "#fff";
-}
+const getBackground = (theme) => {
+  if (theme.sidebarBgMode === "image" && theme.sidebarBgImage) {
+    const url =
+      typeof theme.sidebarBgImage === "string"
+        ? theme.sidebarBgImage
+        : theme.sidebarBgImage.url;
+
+    return {
+      backgroundImage: `url("${url}")`,
+      backgroundSize: theme.sidebarBgImageFit || "cover",
+      backgroundPosition: theme.sidebarBgImagePosition || "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
+
+  if (theme.sidebarBgMode === "gradient") {
+    return {
+      background: cssGradient(theme.sidebarGradient) || theme.sidebarBg,
+    };
+  }
+
+  return {
+    background: theme.sidebarBg || "#F7F8FC",
+  };
+};
 
 export default function ThemePreview({
   theme,
@@ -124,104 +120,87 @@ export default function ThemePreview({
   hubName,
   contentName,
   anchorClass = "relative",
-  className = "w-full aspect-[16/9]",
+  className = "w-full",
   label,
 }) {
   const t = { ...FALLBACK_THEME, ...(theme || {}) };
 
-  const sidebarBg = bgVal(
-    t.sidebarBgMode,
-    t.sidebarBg,
-    t.sidebarGradient,
-    t.sidebarBgImage,
-    t.sidebarBgImageFit,
-    t.sidebarBgImagePosition
-  );
-
   const nameHub = (hubName && hubName.trim()) || "Hub name";
   const nameContent = (contentName && contentName.trim()) || "Content name";
 
-  // Set the same CSS variables Prospect view uses (prospect.css).
-  // Buttons/Nav take their look purely from CSS classes + these vars.
-  const previewVars = {
-    "--brand": t.buttonBg || "#1F50AF",
-    "--brand-hover": t.buttonHoverColor || t.buttonBg || "#1F50AF",
-    "--btn-text": t.buttonText || getContrastColor(t.buttonBg || "#1F50AF"),
-    "--pv-sidebar-text": t.sidebarText || "#374151",
-    "--pv-sidebar-meta-text": t.rightSidebarText || t.sidebarText || "#374151",
+  const sidebarStyle = {
+    ...getBackground(t),
+    color: t.sidebarText || "#374151",
   };
+
   return (
     <div className={anchorClass}>
-      {label && <div className="mb-2 text-[11px] text-gray-700">{label}</div>}
+      {label ? (
+        <div className="mb-2 text-[11px] text-gray-700">{label}</div>
+      ) : null}
 
       <div
-        className={`shadow-lg border border-gray-200 rounded-md overflow-hidden ${className}`}
-        style={previewVars}
+        className={[
+          "overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm",
+          className,
+        ].join(" ")}
       >
-        <div
-          className="flex h-full"
-          style={{ background: sidebarBg, color: t.sidebarText }}
-        >
+        <div className="grid min-h-[420px] grid-cols-[180px_minmax(0,1fr)]">
           <aside
-            className="flex flex-col overflow-hidden"
-            style={{ width: "20%" }}
+            className="flex min-h-full flex-col justify-between p-5"
+            style={sidebarStyle}
           >
-            <div
-              className="shrink-0 flex items-center justify-start px-2"
-              style={{ height: "5rem" }}
-            >
-              {logoUrl ? (
-                <img src={logoUrl} alt="" className="h-8 object-contain" />
-              ) : (
-                <div className="text-[10px] opacity-70">Logo</div>
-              )}
-            </div>
-
-            <div className="px-3 pt-4 text-sm">
-              {/* Selected item matches Prospect left-rail */}
-              <div className="h-8 px-2 grid place-items-center  font-medium nav-item nav-item--active">
-                Item A
+            <div>
+              <div className="flex h-12 items-center">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    className="max-h-10 max-w-[130px] object-contain"
+                  />
+                ) : (
+                  <div className="text-sm font-semibold">{nameHub}</div>
+                )}
               </div>
 
-              {/* Other items pick up hover from CSS (no JS) */}
-              {["Item B", "Item C"].map((label) => (
-                <div
-                  key={label}
-                  className="h-8 px-2 grid place-items-center nav-item"
-                >
-                  {label}
+              <div className="mt-8 space-y-2 text-sm">
+                <div className="rounded-md bg-white/20 px-3 py-2 font-medium">
+                  Overview
                 </div>
-              ))}
+                <div className="px-3 py-2 opacity-80">Content</div>
+                <div className="px-3 py-2 opacity-80">Next steps</div>
+              </div>
             </div>
+
+            <button
+              type="button"
+              className="h-9 rounded-md px-3 text-sm font-medium shadow-sm"
+              style={{
+                backgroundColor: t.buttonBg || "#1F50AF",
+                color: t.buttonText || "#FFFFFF",
+              }}
+            >
+              Contact us
+            </button>
           </aside>
 
-          {/* CENTER viewer */}
-          <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
-            <div className="flex gap-0 h-[78%]">
-              <div
-                className="bg-white border border-gray-300 grid place-items-center text-gray-400 text-[11px] rounded-sm ml-0"
-                style={{ aspectRatio: "1", height: "100%" }}
-              >
-                Content area
+          <section className="bg-white p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
+                  Prospect hub
+                </div>
+                <div
+                  className="mt-2 text-2xl font-semibold"
+                  style={{ color: t.rightSidebarText || "#111827" }}
+                >
+                  {nameHub}
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* RIGHT sidebar CTA uses the same button class */}
-          <aside
-            className="flex flex-col overflow-hidden"
-            style={{ width: "20%" }}
-          >
-            <div className="px-3 pt-4 space-y-2 text-sm">
-              <div className="h-8 px-2 grid place-items-center rounded btn-brand w-full">
-                Contact Us
-              </div>
-            </div>
-            {/* NEW: social icons preview (always show all four) */}
-            <div className="px-4 py-4 pb-4 flex justify-center">
               <div
-                className="flex gap-3 text-[11px]"
-                style={{ color: "var(--pv-sidebar-meta-text)" }}
+                className="flex gap-3"
+                style={{ color: t.rightSidebarText || t.sidebarText }}
               >
                 <Twitter size={14} />
                 <Linkedin size={14} />
@@ -230,27 +209,48 @@ export default function ThemePreview({
               </div>
             </div>
 
-            {/* Info block uses right-sidebar text colour */}
-            <div
-              className="px-4 py-3 space-y-3 text-sm leading-5"
-              style={{ color: "var(--pv-sidebar-meta-text)" }}
-            >
-              <div>
-                <div className="uppercase tracking-wide opacity-60 text-[10px]">
-                  Hub
-                </div>
-                <div className="font-bold text-md">{nameHub}</div>
-              </div>
-              <div>
-                <div className="uppercase tracking-wide opacity-60 text-[10px]">
-                  Content
-                </div>
-                <div>{nameContent}</div>
-              </div>
+            <div className="mt-8 space-y-3">
+              {[contentName || "Intro deck", "Case study", "Pricing guide"].map(
+                (item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {item}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          Content item preview
+                        </div>
+                      </div>
+
+                      <div
+                        className="h-8 w-8 rounded-md"
+                        style={{
+                          backgroundColor:
+                            index === 0 ? t.buttonBg || "#1F50AF" : "#E5E7EB",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
 
-            <div className="flex-1" />
-          </aside>
+            <div className="mt-8 rounded-lg border border-dashed border-gray-200 bg-white p-4">
+              <div className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
+                Selected content
+              </div>
+              <div
+                className="mt-2 text-lg font-semibold"
+                style={{ color: t.rightSidebarText || "#111827" }}
+              >
+                {nameContent}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
